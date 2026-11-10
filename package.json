@@ -1,0 +1,32 @@
+{
+  "name": "spherex-explorer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.25.0",
+  "engines": { "node": ">=22.12.0 <23 || >=24 <25" },
+  "scripts": {
+    "dev": "pnpm --filter @spherex/contracts build && pnpm --parallel --filter @spherex/web --filter @spherex/api dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm --filter @spherex/contracts build && pnpm -r typecheck",
+    "lint": "eslint .",
+    "test": "pnpm --filter @spherex/contracts build && vitest run",
+    "test:watch": "vitest",
+    "test:integration": "pnpm --filter @spherex/contracts build && vitest run --config vitest.integration.config.ts",
+    "eval:live": "pnpm --filter @spherex/contracts build && pnpm --filter @spherex/api eval:live",
+    "demo:scenario": "pnpm --filter @spherex/contracts build && pnpm --filter @spherex/api demo:scenario",
+    "db:up": "docker compose up -d --wait mongodb && docker compose run --rm mongo-init",
+    "db:down": "docker compose down",
+    "db:init": "pnpm --filter @spherex/api db:init",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@types/node": "^22.0.0",
+    "eslint": "^9.39.0",
+    "mongodb-memory-server": "^11.3.0",
+    "typescript": "~5.9.0",
+    "typescript-eslint": "^8.72.1",
+    "vitest": "^4.0.0"
+  }
+}

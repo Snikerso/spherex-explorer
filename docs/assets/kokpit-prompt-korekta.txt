@@ -1,0 +1,8 @@
+Use case: ui-mockup.
+Edit target: the supplied SPHEREx Explorer cockpit mockup. Keep the same layout, dark graphite industrial space-fighter cockpit style, star field illustration, cyan/amber palette, framing and bottom Copilot console.
+Make one targeted revision: replace the illustrative data and the left observations list with coherent demonstration placeholders suitable for this astronomy app.
+Keep the visible DEMO badge. Replace every occurrence of RA 14:57:57.33 with 08:55:10.831, and every occurrence of DEC -62:40:19.5 with -07:14:42.53.
+The main observation date and DATE field must be 2025-06-19. The right metadata observation date must be 2025-06-19. Replace timeline dates in order with 2025-06-19, 2025-08-20, 2025-10-21, 2025-12-17, 2026-02-18. Top-right date should be UTC 2026-11-07.
+Replace the six task-like checkboxes under OBSERVATIONS with four compact selectable exposure rows: "2025-06-19  DEMO", "2025-08-20  DEMO", "2025-12-17  DEMO", "2026-02-18  DEMO"; first and third selected. Beneath these rows add a clearly labeled "PREPARE SEQUENCE" button. These are illustrative examples, not an assertion of real observations.
+If there is room for small supporting text, include "Illustrative data" near the DEMO badge.
+Preserve all other features. This is a polished screenshot of an implementable web interface, not a physical cockpit photo.
