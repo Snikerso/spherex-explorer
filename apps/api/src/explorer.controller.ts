@@ -43,12 +43,12 @@ export class ExplorerController {
   }
   @Post('sequences') @HttpCode(202) @UseGuards(OriginGuard)
   async prepare(@Req() request: SessionRequest, @Body() body: unknown) {
-    const input = z.object({ searchId: z.string().uuid(), observationIds: z.array(z.string().min(1).max(200)).min(2).max(500), expectedRevision: z.number().int().nonnegative() }).strict().parse(body);
+    const input = z.object({ searchId: z.string().uuid(), observationIds: z.array(z.string().min(1).max(200)).min(2).max(64), expectedRevision: z.number().int().nonnegative() }).strict().parse(body);
     return (await this.actions(request.viewerSessionId, input.expectedRevision)).prepareSequence(input);
   }
   @Post('band-sequences') @HttpCode(202) @UseGuards(OriginGuard)
   async prepareBands(@Req() request: SessionRequest, @Body() body: unknown) {
-    const input = z.object({ searchId: z.string().uuid(), detectors: z.array(z.enum(['SPHEREx-D1', 'SPHEREx-D2', 'SPHEREx-D3', 'SPHEREx-D4', 'SPHEREx-D5', 'SPHEREx-D6'])).min(1).max(6).refine(items => new Set(items).size === items.length), observationIds: z.array(z.string().min(1).max(200)).min(2).max(500).optional(), expectedRevision: z.number().int().nonnegative() }).strict().parse(body);
+    const input = z.object({ searchId: z.string().uuid(), detectors: z.array(z.enum(['SPHEREx-D1', 'SPHEREx-D2', 'SPHEREx-D3', 'SPHEREx-D4', 'SPHEREx-D5', 'SPHEREx-D6'])).min(1).max(6).refine(items => new Set(items).size === items.length), observationIds: z.array(z.string().min(1).max(200)).min(2).max(64).optional(), expectedRevision: z.number().int().nonnegative() }).strict().parse(body);
     return this.observations.prepareBands(request.viewerSessionId, input.searchId, input.detectors, input.expectedRevision, input.observationIds);
   }
   @Post('sequences/:id/analyze') @HttpCode(200) @UseGuards(OriginGuard)

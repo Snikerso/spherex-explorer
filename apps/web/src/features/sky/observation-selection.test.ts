@@ -30,3 +30,15 @@ describe('dataset sampling', () => {
     expect(items[0]!.id).toBe('1-0');
   });
 });
+
+it('caps sampling at 64 across bands and retains the full time range', () => {
+  const ids = sampleObservations(items, 100, 64);
+  expect(ids).toHaveLength(64);
+  expect(new Set(ids).size).toBe(64);
+  for (const band of [1, 2]) {
+    expect(ids.filter((id) => id.startsWith(`${band}-`))).toHaveLength(32);
+    expect(ids).toContain(`${band}-0`);
+    expect(ids).toContain(`${band}-99`);
+  }
+  expect(sampleObservations(items, 10, 64)).toHaveLength(20);
+});

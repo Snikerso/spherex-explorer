@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import {
   DomainError,
+  MAX_SELECTED_OBSERVATIONS,
   type SearchInput,
   type SearchResult,
   type Sequence,
@@ -143,7 +144,9 @@ export class HistoryService {
         searchRequestId: randomUUID(),
         searchInput: search.input,
         targetId: targetFor(search)?.id ?? null,
-        selectedObservationIds: ready?.observationIds ?? search.observations.map((item) => item.id),
+        selectedObservationIds: (
+          ready?.observationIds ?? search.observations.map((item) => item.id)
+        ).slice(0, MAX_SELECTED_OBSERVATIONS),
         sequenceId: ready?.id ?? null,
         jobId: null,
         frameIds: ready

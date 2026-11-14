@@ -11,7 +11,6 @@ export function RgbControls({
   const {
     allFrames,
     epochHours,
-    setEpochHours,
     exposure,
     setExposure,
     setDiscovery,
@@ -24,20 +23,6 @@ export function RgbControls({
   } = sky;
   return (
     <section className="image-controls panel" aria-label={t('Kolor i jasność')}>
-      <label>
-        {t('Okres ')}
-        <select
-          aria-label={t('Maksymalny odstęp zdjęć RGB')}
-          value={epochHours}
-          onChange={(event) => setEpochHours(Number(event.target.value))}
-        >
-          {[1, 6, 24, 72, 168].map((hours) => (
-            <option key={hours} value={hours}>
-              {hours < 24 ? t('{0} godz.', hours) : t('{0} dni', hours / 24)}
-            </option>
-          ))}
-        </select>
-      </label>
       <label className="exposure-control">
         {t('Jasność ')}
         <input

@@ -88,6 +88,8 @@ export function SkyWorkspace(props: SkyWorkspaceProps) {
     <>
       {' '}
       <BandSelector
+        onEpochHoursChange={sky.setEpochHours}
+        epochHours={epochHours}
         key={search?.id ?? 'no-search'}
         availability={
           <BandAvailability

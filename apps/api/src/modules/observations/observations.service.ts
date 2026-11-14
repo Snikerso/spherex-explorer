@@ -6,6 +6,7 @@ import { mkdir, writeFile, readFile, rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import {
   DomainError,
+  MAX_SELECTED_OBSERVATIONS,
   selectCompositeFrames,
   type VideoRenderOptions,
   type AnnotationInput,
@@ -118,6 +119,8 @@ export class ObservationsService implements OnModuleInit, OnModuleDestroy {
     multipleBands = false,
   ): Promise<Sequence> {
     signal?.throwIfAborted();
+    if (observationIds.length > MAX_SELECTED_OBSERVATIONS)
+      throw new DomainError('SELECTION_LIMIT', 'Możesz wybrać maksymalnie 64 zdjęcia łącznie.');
     const view = await this.workspace.get(sessionId);
     const search = view.searchId ? await this.getSearch(sessionId, view.searchId) : null;
     const selected = search?.observations.filter((item) => observationIds.includes(item.id)) ?? [];
@@ -221,6 +224,8 @@ export class ObservationsService implements OnModuleInit, OnModuleDestroy {
         );
       ids.push(...chosen.map((item) => item.id));
     }
+    if (ids.length > MAX_SELECTED_OBSERVATIONS)
+      throw new DomainError('SELECTION_LIMIT', 'Możesz wybrać maksymalnie 64 zdjęcia łącznie.');
     const selected = await this.workspace.patch(
       sessionId,
       { selectedObservationIds: ids, playing: false },

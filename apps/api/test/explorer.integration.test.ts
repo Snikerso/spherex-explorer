@@ -138,22 +138,20 @@ describe('Explorer REST: ownership, live search, cancellation and SSE replay', (
         'base64',
       ),
     );
-    await store
-      .collection('sequences')
-      .insertOne({
-        id,
-        sessionId: a.sessionId,
-        status: 'ready',
-        frameIds: [frameId],
-        frames: [
-          {
-            id: frameId,
-            radianceName: 'frame.f32',
-            imageName: 'frame.png',
-            unmaskedImageName: 'frame.png',
-          },
-        ],
-      });
+    await store.collection('sequences').insertOne({
+      id,
+      sessionId: a.sessionId,
+      status: 'ready',
+      frameIds: [frameId],
+      frames: [
+        {
+          id: frameId,
+          radianceName: 'frame.f32',
+          imageName: 'frame.png',
+          unmaskedImageName: 'frame.png',
+        },
+      ],
+    });
     const frame = await call(`/sequences/${id}/frames/${frameId}`, a.cookie);
     expect(frame.status).toBe(200);
     expect(frame.headers.get('content-type')).toContain('image/png');
@@ -189,16 +187,14 @@ describe('Explorer REST: ownership, live search, cancellation and SSE replay', (
     const b = await session();
     const id = randomUUID();
     const sequenceId = randomUUID();
-    await store
-      .collection('jobs')
-      .insertOne({
-        id,
-        sessionId: a.sessionId,
-        sequenceId,
-        active: true,
-        status: 'queued',
-        progress: 0,
-      });
+    await store.collection('jobs').insertOne({
+      id,
+      sessionId: a.sessionId,
+      sequenceId,
+      active: true,
+      status: 'queued',
+      progress: 0,
+    });
     await store
       .collection('sequences')
       .insertOne({ id: sequenceId, sessionId: a.sessionId, status: 'queued' });
@@ -212,27 +208,23 @@ describe('Explorer REST: ownership, live search, cancellation and SSE replay', (
     const a = await session();
     const b = await session();
     const id = randomUUID();
-    await store
-      .collection('runs')
-      .insertOne({
-        id,
-        sessionId: a.sessionId,
-        clientRequestId: randomUUID(),
-        active: false,
-        status: 'completed',
-      });
+    await store.collection('runs').insertOne({
+      id,
+      sessionId: a.sessionId,
+      clientRequestId: randomUUID(),
+      active: false,
+      status: 'completed',
+    });
     for (const [index, type] of ['run.started', 'message.delta', 'run.completed'].entries())
-      await store
-        .collection('runEvents')
-        .insertOne({
-          sessionId: a.sessionId,
-          runId: id,
-          seq: index + 1,
-          schemaVersion: 1,
-          type,
-          payload: { content: 'test' },
-          timestamp: new Date().toISOString(),
-        });
+      await store.collection('runEvents').insertOne({
+        sessionId: a.sessionId,
+        runId: id,
+        seq: index + 1,
+        schemaVersion: 1,
+        type,
+        payload: { content: 'test' },
+        timestamp: new Date().toISOString(),
+      });
     const response = await call(`/agent/runs/${id}/events`, a.cookie, undefined, 'GET', {
       'last-event-id': `${id}:1`,
     });
@@ -242,6 +234,19 @@ describe('Explorer REST: ownership, live search, cancellation and SSE replay', (
     expect(text).toContain('event: message.delta');
     expect(text).toContain(`id: ${id}:3`);
     expect((await call(`/agent/runs/${id}/events`, b.cookie)).status).toBe(404);
+  });
+  it('rejects more than 64 images before preparing a sequence', async () => {
+    const a = await session();
+    const ids = Array.from({ length: 65 }, (_, index) => `image-${index}`);
+    for (const path of ['/sequences', '/band-sequences']) {
+      const response = await call(path, a.cookie, {
+        searchId: randomUUID(),
+        observationIds: ids,
+        expectedRevision: 0,
+        ...(path === '/band-sequences' ? { detectors: ['SPHEREx-D1'] } : {}),
+      });
+      expect(response.status).toBe(400);
+    }
   });
   it('prepares selected detectors together without collapsing selection to a single detector', async () => {
     const a = await session();
@@ -258,17 +263,15 @@ describe('Explorer REST: ownership, live search, cancellation and SSE replay', (
         observedAtUtc: new Date(Date.UTC(2025, 4, index + 1)).toISOString(),
       })),
     );
-    await store
-      .collection('searches')
-      .insertOne({
-        id: searchId,
-        sessionId: a.sessionId,
-        input,
-        observations: [
-          ...observations,
-          { ...observations[0], id: 'not-selected', observedAtUtc: '2025-05-03T00:00:00Z' },
-        ],
-      });
+    await store.collection('searches').insertOne({
+      id: searchId,
+      sessionId: a.sessionId,
+      input,
+      observations: [
+        ...observations,
+        { ...observations[0], id: 'not-selected', observedAtUtc: '2025-05-03T00:00:00Z' },
+      ],
+    });
     const view = await app.get(WorkspaceService).patch(a.sessionId, { searchId }, 0, 'system');
     const queued = {
       id: randomUUID(),
@@ -437,15 +440,13 @@ describe('Explorer REST: ownership, live search, cancellation and SSE replay', (
     const a = await session();
     const id = randomUUID();
     const clientRequestId = randomUUID();
-    await store
-      .collection('runs')
-      .insertOne({
-        id,
-        sessionId: a.sessionId,
-        clientRequestId,
-        active: false,
-        status: 'completed',
-      });
+    await store.collection('runs').insertOne({
+      id,
+      sessionId: a.sessionId,
+      clientRequestId,
+      active: false,
+      status: 'completed',
+    });
     const response = await call('/agent/runs', a.cookie, { message: 'test', clientRequestId });
     expect((await response.json()).id).toBe(id);
     expect(await store.collection('runs').countDocuments({ sessionId: a.sessionId })).toBe(1);
@@ -456,15 +457,13 @@ describe('Explorer REST: ownership, live search, cancellation and SSE replay', (
     const query = vi
       .spyOn(gaiaModule, 'queryGaia')
       .mockResolvedValue({ catalog: 'Gaia DR3', sources: [], truncated: false, radiusDeg: 0.1 });
-    const render = vi
-      .spyOn(wiseModule, 'queryWise')
-      .mockResolvedValue({
-        image: 'data:image/png;base64,test',
-        sourceUrl: 'https://irsa.ipac.caltech.edu/ibe/data/wise/test.fits',
-        band: 'W1',
-        timeStart: null,
-        timeEnd: null,
-      });
+    const render = vi.spyOn(wiseModule, 'queryWise').mockResolvedValue({
+      image: 'data:image/png;base64,test',
+      sourceUrl: 'https://irsa.ipac.caltech.edu/ibe/data/wise/test.fits',
+      band: 'W1',
+      timeStart: null,
+      timeEnd: null,
+    });
     const a = await session(),
       b = await session();
     expect((await fetch(base + '/catalogs/gaia?ra=10&dec=20&radius=.1')).status).toBe(401);
@@ -528,16 +527,14 @@ describe('Explorer REST: ownership, live search, cancellation and SSE replay', (
       searchId = randomUUID(),
       sequenceId = randomUUID(),
       frameId = randomUUID();
-    await store
-      .collection('searches')
-      .insertOne({
-        id: searchId,
-        sessionId: a.sessionId,
-        input,
-        observations: [observation],
-        createdAt: new Date(),
-        dataMode: 'live',
-      });
+    await store.collection('searches').insertOne({
+      id: searchId,
+      sessionId: a.sessionId,
+      input,
+      observations: [observation],
+      createdAt: new Date(),
+      dataMode: 'live',
+    });
     await store.collection('sequences').insertMany([
       {
         id: sequenceId,
@@ -577,16 +574,14 @@ describe('Explorer REST: ownership, live search, cancellation and SSE replay', (
     const a = await session(),
       b = await session(),
       id = randomUUID();
-    await store
-      .collection('searches')
-      .insertOne({
-        id,
-        sessionId: a.sessionId,
-        input,
-        observations: [],
-        createdAt: new Date(),
-        dataMode: 'live',
-      });
+    await store.collection('searches').insertOne({
+      id,
+      sessionId: a.sessionId,
+      input,
+      observations: [],
+      createdAt: new Date(),
+      dataMode: 'live',
+    });
     expect(
       (await call(`/search-history/${id}/restore`, b.cookie, { expectedRevision: 0 })).status,
     ).toBe(404);

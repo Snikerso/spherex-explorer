@@ -3,10 +3,12 @@ import { PopupDetails } from '../../../shared/components/PopupDetails';
 import { t } from '../../../shared/i18n/index';
 import { useState, type ReactNode } from 'react';
 import { sampleObservations } from '../observation-selection';
-import type { Observation, SequenceBand } from '@spherex/contracts';
+import { MAX_SELECTED_OBSERVATIONS, type Observation, type SequenceBand } from '@spherex/contracts';
 
 type Props = {
   availability?: ReactNode;
+  epochHours: number;
+  onEpochHoursChange: (hours: number) => void;
   notice?: string;
   observations: Observation[];
   detectors: string[];
@@ -22,6 +24,8 @@ type Props = {
 
 export function BandSelector({
   availability,
+  epochHours,
+  onEpochHoursChange,
   notice,
   observations,
   detectors,
@@ -37,7 +41,8 @@ export function BandSelector({
   const [imageBand, setImageBand] = useState<string | null>(null);
   const [percent, setPercent] = useState(100);
   const [overrides, setOverrides] = useState<Record<string, boolean>>({});
-  const sampled = new Set(sampleObservations(observations, percent));
+  const visible = observations.filter((item) => detectors.includes(item.detector ?? ''));
+  const sampled = new Set(sampleObservations(visible, percent, MAX_SELECTED_OBSERVATIONS));
   const isSelected = (id: string) => overrides[id] ?? sampled.has(id);
   const changePercent = (value: number) => {
     if (!Number.isFinite(value)) return;
@@ -61,10 +66,10 @@ export function BandSelector({
     };
   });
   const available = bands.filter((band) => band.usable).map((band) => band.detector);
-  const visible = observations.filter((item) => detectors.includes(item.detector ?? ''));
   const activeImageBand = imageBand && detectors.includes(imageBand) ? imageBand : null;
   const selected = visible.filter((item) => isSelected(item.id));
   const valid =
+    selected.length <= MAX_SELECTED_OBSERVATIONS &&
     detectors.length > 0 &&
     detectors.every((detector) => {
       const items = selected.filter((item) => item.detector === detector);
@@ -79,6 +84,7 @@ export function BandSelector({
           disabled={disabled || !available.length}
           aria-pressed={available.length > 0 && available.every((item) => detectors.includes(item))}
           onClick={() => {
+            setOverrides({});
             onChange(available);
           }}
         >
@@ -92,6 +98,7 @@ export function BandSelector({
             disabled={disabled || !band.usable}
             title={`${band.range} · ${band.count} ${t('zdjęć')}`}
             onClick={() => {
+              setOverrides({});
               onChange(
                 detectors.includes(band.detector)
                   ? detectors.filter((item) => item !== band.detector)
@@ -116,6 +123,21 @@ export function BandSelector({
       </button>
       <section className="image-sampling" aria-label={t('Wybór zdjęć')}>
         <div className="sampling-controls">
+          <label className="sampling-time-window">
+            {t('Okres ')}
+            <select
+              aria-label={t('Maksymalny odstęp zdjęć RGB')}
+              value={epochHours}
+              onChange={(event) => onEpochHoursChange(Number(event.target.value))}
+            >
+              {[1, 6, 24, 72, 168].map((hours) => (
+                <option key={hours} value={hours}>
+                  {hours < 24 ? t('{0} godz.', hours) : t('{0} dni', hours / 24)}
+                </option>
+              ))}
+            </select>
+          </label>
+
           <label htmlFor="image-percent">{t('Udział zdjęć')}</label>
           <input
             id="image-percent"
@@ -142,6 +164,9 @@ export function BandSelector({
             {t('Wszystkie')}
           </button>
         </div>
+        <small className="selection-limit">
+          {t('Limit: maksymalnie 64 zdjęcia łącznie ze wszystkich pasm.')}
+        </small>
         <small>
           {t(
             'Równomiernie w czasie, minimum 2 zdjęcia na pasmo. Zmiana procentu resetuje ręczne wybory.',
@@ -180,6 +205,7 @@ export function BandSelector({
               ))}
           </nav>
           <ObservationSelectionGrid
+            epochHours={epochHours}
             observations={visible}
             detectors={
               activeImageBand
@@ -190,7 +216,11 @@ export function BandSelector({
             }
             isSelected={isSelected}
             disabled={disabled}
-            onToggle={(id) => setOverrides((previous) => ({ ...previous, [id]: !isSelected(id) }))}
+            selectionFull={selected.length >= MAX_SELECTED_OBSERVATIONS}
+            onToggle={(id) => {
+              if (!isSelected(id) && selected.length >= MAX_SELECTED_OBSERVATIONS) return;
+              setOverrides((previous) => ({ ...previous, [id]: !isSelected(id) }));
+            }}
           />
         </details>
         {!valid && visible.length > 0 && (

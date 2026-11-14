@@ -108,7 +108,7 @@ export class AgentActions {
         times.add(item.observedAtUtc);
         return true;
       })
-      .slice(0, Math.min(500, args.limit))
+      .slice(0, Math.min(64, args.limit))
       .map((item) => item.id);
     if (ids.length < 2)
       throw new DomainError(

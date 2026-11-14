@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+export const MAX_SELECTED_OBSERVATIONS = 64;
+
 const identifier = z.string().min(1).max(200);
 const utcDate = z.iso.datetime({ offset: true });
 export const searchInputSchema = z.object({
@@ -23,7 +25,7 @@ export const viewStateSchema = z.object({
   searchInput: searchInputSchema.nullable(),
   searchId: identifier.nullable(),
   searchRequestId: identifier.nullable(),
-  selectedObservationIds: z.array(identifier).max(500),
+  selectedObservationIds: z.array(identifier).max(MAX_SELECTED_OBSERVATIONS),
   jobId: identifier.nullable(),
   sequenceId: identifier.nullable(),
   frameIds: z.array(identifier).max(500),

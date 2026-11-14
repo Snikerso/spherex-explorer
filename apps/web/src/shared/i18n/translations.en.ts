@@ -1,4 +1,20 @@
 export const english: Record<string, string> = {
+  'Limit: maksymalnie 64 zdjęcia łącznie ze wszystkich pasm.':
+    'Limit: 64 images total across all bands.',
+  'Możesz wybrać maksymalnie 64 zdjęcia łącznie.': 'You can select up to 64 images in total.',
+  'Przewijaj siatkę w poziomie': 'Scroll the grid horizontally',
+  'Przewiń w prawo': 'Scroll right',
+  'Przewiń w lewo': 'Scroll left',
+  'Przewijanie osi czasu': 'Timeline scrolling',
+  'Wspólna oś UTC: kolumna obejmuje okres do {0} godz. zgodnie z Time window. Kliknij zdjęcie, aby zmienić wybór.':
+    'Shared UTC axis: each column spans up to {0} hours, matching Time window. Click an image to toggle its selection.',
+
+  'To dostępność z katalogu. Pokrycie pola i użyteczność pikseli zostaną sprawdzone po odczycie FITS.':
+    'Catalog availability only. Field coverage and usable pixels will be checked after reading the FITS files.',
+  'Dostępność ekspozycji przed przygotowaniem': 'Exposure availability before preparation',
+  'Wspólna oś UTC: kolumna oznacza ten sam czas dla wszystkich pasm. Kliknij zdjęcie, aby zmienić wybór.':
+    'Shared UTC axis: each column is the same exact time across all bands. Click an image to toggle its selection.',
+  'Brak ekspozycji': 'No exposure',
   'Kliknij kwadrat, aby zmienić wybór. Od lewej: od najstarszych zdjęć.':
     'Click a square to toggle an image. Oldest images on the left.',
   Wybrane: 'Selected',
