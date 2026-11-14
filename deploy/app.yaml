@@ -1,12 +1,10 @@
 name: spherex-explorer
 region: fra
-egress:
-  type: DEDICATED_IP
 services:
   - name: explorer
     github:
       repo: Snikerso/spherex-explorer
-      branch: codex/app-platform
+      branch: codex/app-platform-release
       deploy_on_push: true
     dockerfile_path: Dockerfile
     source_dir: /
