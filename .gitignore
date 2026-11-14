@@ -8,3 +8,7 @@ coverage/
 data/cache/
 output/
 *.log
+.venv/
+.serena/
+__pycache__/
+.pytest_cache/

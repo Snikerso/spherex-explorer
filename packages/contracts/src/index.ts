@@ -5,10 +5,10 @@ const utcDate = z.iso.datetime({ offset: true });
 export const searchInputSchema = z.object({
   raDeg: z.number().min(0).lt(360),
   decDeg: z.number().min(-90).max(90),
-  fovDeg: z.number().positive().max(0.5),
+  fovDeg: z.number().positive().max(2),
   fromUtc: utcDate.nullable(),
   toUtc: utcDate.nullable(),
-  release: z.enum(['qr2', 'qr3']),
+  release: z.string().regex(/^[a-z][a-z0-9_-]{0,31}$/),
 }).strict().refine(
   (value) => !value.fromUtc || !value.toUtc || Date.parse(value.fromUtc) <= Date.parse(value.toUtc),
   { message: 'Data początkowa musi poprzedzać końcową.', path: ['toUtc'] },
@@ -23,13 +23,17 @@ export const viewStateSchema = z.object({
   searchInput: searchInputSchema.nullable(),
   searchId: identifier.nullable(),
   searchRequestId: identifier.nullable(),
-  selectedObservationIds: z.array(identifier).max(24),
+  selectedObservationIds: z.array(identifier).max(500),
   jobId: identifier.nullable(),
   sequenceId: identifier.nullable(),
-  frameIds: z.array(identifier).max(24),
+  frameIds: z.array(identifier).max(500),
   mode: z.enum(['single', 'blink', 'side_by_side']),
   playing: z.boolean(),
+  qualityMask: z.boolean().default(false),
   fps: z.number().min(0.25).max(4),
+  zoom: z.number().min(1).max(8),
+  panX: z.number().min(-2).max(2),
+  panY: z.number().min(-2).max(2),
   selectedPoint: pointSchema.nullable(),
   viewRevision: z.number().int().nonnegative(),
   lastChangedBy: z.enum(['user', 'agent', 'system']),
@@ -42,18 +46,21 @@ export type ViewPatch = z.infer<typeof viewPatchSchema>;
 // są ustawiane wyłącznie przez serwisy posiadające kontrolę własności zasobów.
 export const manualViewRequestSchema = z.object({
   expectedRevision: z.number().int().nonnegative(),
-  patch: viewPatchSchema.pick({ searchInput: true, fps: true, mode: true, playing: true, selectedPoint: true }),
+  patch: viewPatchSchema.pick({ searchInput: true, fps: true, mode: true, playing: true, selectedPoint: true, targetId: true, selectedObservationIds: true, frameIds: true, zoom: true, panX: true, panY: true, qualityMask: true }),
 }).strict();
 
 export class DomainError extends Error {
   constructor(public readonly code: string, message: string) { super(message); }
 }
 
+export * from './resources.js';
+export * from './sky.js';
+
 export function initialView(): ViewState {
   return {
     targetId: null, searchInput: null, searchId: null, searchRequestId: null, selectedObservationIds: [],
-    jobId: null, sequenceId: null, frameIds: [], mode: 'single', playing: false,
-    fps: 2, selectedPoint: null, viewRevision: 0, lastChangedBy: 'system',
+    jobId: null, sequenceId: null, frameIds: [], mode: 'single', playing: false, qualityMask: false,
+    fps: 2, zoom: 1, panX: 0, panY: 0, selectedPoint: null, viewRevision: 0, lastChangedBy: 'system',
   };
 }
 
@@ -69,5 +76,10 @@ export function applyViewPatch(current: ViewState, patch: ViewPatch, expectedRev
 
 export const healthSchema = z.object({
   status: z.literal('ok'), database: z.literal('connected'),
-  dataMode: z.enum(['demo', 'live']), stage: z.literal('scaffold'),
+  dataMode: z.enum(['demo', 'live']), stage: z.enum(['scaffold', 'mvp']),
 });
+export { selectCompositeFrames, compositeChannel } from './composite.js';
+export { rgbValues, type RgbChannel } from './composite.js';
+export { parseExplorerLink, explorerLink } from './links.js';
+export { skyDirection, earthIntersection, EARTH_RADIUS_KM, type Vector3 } from './navigation.js';
+export { gaiaSourceSchema, gaiaResultSchema, gaiaPosition, type GaiaSource, type GaiaResult, type WiseReference } from './catalogs.js';

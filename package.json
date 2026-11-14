@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.25.0",
-  "engines": { "node": ">=22.12.0 <23 || >=24 <25" },
+  "engines": {
+    "node": ">=22.12.0 <23 || >=24 <25"
+  },
   "scripts": {
     "dev": "pnpm --filter @spherex/contracts build && pnpm --parallel --filter @spherex/web --filter @spherex/api dev",
     "build": "pnpm -r build",
@@ -18,13 +20,19 @@
     "db:up": "docker compose up -d --wait mongodb && docker compose run --rm mongo-init",
     "db:down": "docker compose down",
     "db:init": "pnpm --filter @spherex/api db:init",
-    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "dev:doppler": "doppler run --project sphere_x --config dev -- pnpm dev",
+    "verify:live": "node scripts/verify-live.mjs",
+    "test:imaging": "uv run --project workers/imaging pytest workers/imaging/test_worker.py -q",
+    "format:web": "prettier --write \"apps/web/src/**/*.{ts,tsx}\"",
+    "format:check": "prettier --check \"apps/web/src/**/*.{ts,tsx}\" \"apps/api/src/modules/observations/**/*.ts\""
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",
     "@types/node": "^22.0.0",
     "eslint": "^9.39.0",
     "mongodb-memory-server": "^11.3.0",
+    "prettier": "^3.10.1",
     "typescript": "~5.9.0",
     "typescript-eslint": "^8.72.1",
     "vitest": "^4.0.0"

@@ -32,9 +32,9 @@ export class FixtureObservations implements ObservationPort {
     signal?.throwIfAborted();
     if (this.unavailable) throw new Error('Symulowana niedostępność źródła');
     const result: SearchResult = { id: randomUUID(), sessionId, dataMode: 'demo', observations: this.empty ? [] : [
-      { id: 'demo-epoch-b', observedAtUtc: '2025-12-17T00:00:00Z', comparisonGroup: 'demo-qr3-same-wave' },
-      { id: 'demo-epoch-a', observedAtUtc: '2025-06-19T00:00:00Z', comparisonGroup: 'demo-qr3-same-wave' },
-      { id: 'demo-other-band', observedAtUtc: '2025-08-20T00:00:00Z', comparisonGroup: 'demo-other-wave' },
+      { id: 'demo-epoch-b', observedAtUtc: '2025-12-17T00:00:00Z', comparisonGroup: 'demo-qr3-same-wave', detector: 'SPHEREx-D1' },
+      { id: 'demo-epoch-a', observedAtUtc: '2025-06-19T00:00:00Z', comparisonGroup: 'demo-qr3-same-wave', detector: 'SPHEREx-D1' },
+      { id: 'demo-other-band', observedAtUtc: '2025-08-20T00:00:00Z', comparisonGroup: 'demo-other-wave', detector: 'SPHEREx-D2' },
     ] };
     this.searches.set(result.id, result);
     return structuredClone(result);

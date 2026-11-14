@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { Model } from 'mongoose';
+import type { Model } from 'mongoose';
 import type { SessionRecord } from '../../database/models.js';
 
 const hash = (value: string) => createHash('sha256').update(value).digest('hex');

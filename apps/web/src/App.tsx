@@ -1,29 +1,128 @@
-import { useEffect, useState } from 'react';
-import { healthSchema } from '@spherex/contracts';
-
+import { useState } from 'react';
+import { t, useLanguage } from './shared/i18n';
+import { useExplorer } from './features/explorer/useExplorer';
+import { useSearchForm } from './features/navigation/useSearchForm';
+import { useSkyWorkspace } from './features/sky/hooks/useSkyWorkspace';
+import { SkyWorkspace } from './features/sky/SkyWorkspace';
+import { ActivityStatus } from './app/components/ActivityStatus';
+import { CockpitTabs, type CockpitTab } from './app/components/CockpitTabs';
+import { CockpitFooter } from './app/components/CockpitFooter';
+import { InstrumentPanel } from './features/instruments/InstrumentPanel';
+import { SearchPanel } from './features/navigation/SearchPanel';
+import { CopilotChat } from './features/copilot/CopilotChat';
+import { MissionHeader } from './app/components/MissionHeader';
+import { NavigationOrbit } from './features/navigation/NavigationOrbit';
+import { EpochComparePanel } from './features/analysis/EpochComparePanel';
+import { DiscoveryPanel } from './features/analysis/DiscoveryPanel';
 export function App() {
-  const [status, setStatus] = useState('Sprawdzanie połączenia…');
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch('/api/v1/health/ready', { signal: controller.signal })
-      .then(async (response) => {
-        if (!response.ok) throw new Error('API niedostępne');
-        const health = healthSchema.parse(await response.json());
-        setStatus(`API i MongoDB połączone · tryb ${health.dataMode}`);
-      })
-      .catch(() => { if (!controller.signal.aborted) setStatus('API niedostępne — uruchom MongoDB i backend.'); });
-    return () => controller.abort();
-  }, []);
-
-  return <main className="cockpit">
-    <header><span className="accent">///</span><h1>SPHEREx Explorer</h1><span className="badge">SZKIELET / 0.1</span></header>
-    <p role="status">{status}</p>
-    <section className="viewport" aria-labelledby="stage-title">
-      <span className="eyebrow">STANOWISKO OBSERWACYJNE</span>
-      <h2 id="stage-title">Fundament projektu jest gotowy.</h2>
-      <p>React, NestJS, MongoDB i wspólne kontrakty. Kolejny etap to podłączenie obserwacji oraz interaktywnego kokpitu.</p>
-      <div className="modules"><span>01 / NAWIGACJA</span><span>02 / OBRAZ NIEBA</span><span>03 / COPILOT</span></div>
-    </section>
-    <footer>Obrazy SPHEREx i czat nie są jeszcze podłączone. Ten ekran potwierdza uruchomienie szkieletu.</footer>
-  </main>;
+  useLanguage();
+  const explorer = useExplorer();
+  const { view, targets, sequence, job } = explorer;
+  const [tab, setTab] = useState<CockpitTab>('sky');
+  const sky = useSkyWorkspace(explorer, tab);
+  const {
+    draft,
+    targetId,
+    target,
+    edit,
+    choose,
+    doSearch,
+    send,
+    copyLink,
+    shareText,
+    pendingForm,
+  } = useSearchForm(explorer, () => sky.setDetectors([]));
+  const {
+    currentFrame,
+    observation,
+    patch,
+    allFrames,
+    colorActive,
+    colorSources,
+    discovery,
+    setDiscovery,
+  } = sky;
+  const loadedTarget = targets.find((item) => item.id === view.targetId);
+  return (
+    <main
+      className="cockpit"
+      data-embed={new URLSearchParams(location.search).get('embed') === '1'}
+    >
+      <MissionHeader connected={explorer.connected} />
+      <ActivityStatus explorer={explorer} />
+      <CockpitTabs value={tab} onChange={setTab} />
+      {discovery === 'compare' && sequence && (
+        <EpochComparePanel
+          sequenceId={sequence.id}
+          frames={allFrames}
+          initialFrameId={currentFrame?.id}
+          close={() => setDiscovery(null)}
+        />
+      )}
+      {discovery && discovery !== 'compare' && sequence?.input && (
+        <DiscoveryPanel
+          key={`${sequence.id}/${discovery}`}
+          sequenceId={sequence.id}
+          point={
+            view.selectedPoint ?? { raDeg: sequence.input.raDeg, decDeg: sequence.input.decDeg }
+          }
+          initialKind={discovery}
+          close={() => setDiscovery(null)}
+        />
+      )}
+      <div className="workspace" data-panel={tab}>
+        <SearchPanel
+          explorer={explorer}
+          draft={draft}
+          targetId={targetId}
+          target={target}
+          active={tab === 'nav'}
+          pendingForm={Boolean(pendingForm)}
+          choose={choose}
+          edit={edit}
+          doSearch={doSearch}
+        />
+        <section className={`center ${tab === 'sky' ? 'mobile-active' : ''}`}>
+          {tab === 'nav' ? (
+            <NavigationOrbit
+              ra={draft.ra.trim() ? Number(draft.ra) : NaN}
+              dec={draft.dec.trim() ? Number(draft.dec) : NaN}
+              fov={Number(draft.fov)}
+              targetName={target?.name ?? t('Wybrane współrzędne')}
+              connected={explorer.connected}
+              sequenceId={sequence?.id}
+              frames={allFrames}
+              currentFrameId={currentFrame?.id}
+              rgbSources={colorActive ? colorSources : []}
+            />
+          ) : (
+            <>
+              <SkyWorkspace explorer={explorer} sky={sky} draft={draft} target={target} />
+            </>
+          )}
+        </section>
+        <InstrumentPanel
+          explorer={explorer}
+          currentFrame={currentFrame}
+          observation={observation}
+          draft={draft}
+          active={tab === 'tools'}
+          shareText={shareText}
+          onCopyLink={copyLink}
+          patch={patch}
+        />
+      </div>
+      {job?.status === 'failed' && (
+        <div className="job-status panel" role="alert">
+          △ {job.error?.message ?? t('Nie udało się przygotować obrazów. Spróbuj ponownie.')}
+        </div>
+      )}
+      <CopilotChat explorer={explorer} onSend={send} />
+      <div className="operation" role="status" title={t(explorer.notice)}>
+        <span className="dot" />
+        {t(explorer.notice)}
+      </div>
+      <CockpitFooter target={loadedTarget ?? target} />
+    </main>
+  );
 }

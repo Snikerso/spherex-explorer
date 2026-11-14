@@ -2,7 +2,7 @@
 
 Wersja projektowa `v1`. Wszystkie ścieżki poniżej mają prefiks `/api/v1`. REST JSON; zdarzenia czatu jako SSE. Schematy w `packages/contracts` są źródłem typów i walidacji; NestJS publikuje OpenAPI dla REST.
 
-**Status szkieletu:** działają `GET /health/live`, `GET /health/ready`, `POST /sessions`, `GET /view` i `PATCH /view` oraz kolekcje `sessions` i `views`. Pozostała część kontraktu, publikacja OpenAPI, odświeżanie/porządkowanie pełnej sesji i SSE są specyfikacją do wdrożenia. Obecny `PATCH /view` obsługuje filtry, tryb, tempo, play/pause i punkt; nie przyjmuje referencji do sekwencji od klienta.
+**Status implementacji (14 listopada 2026):** działają sesje, widok, katalog celów, wyszukiwanie IRSA, sekwencje, zadania i anulowanie, autoryzowane PNG, notatki, wiadomości oraz run/SSE/anulowanie agenta. `GET /capabilities` opisuje dostępność agenta; `GET /agent/runs/current` pozwala wznowić stream po odświeżeniu. Operacje ręczne wyszukiwania, sekwencji i notatek wymagają `expectedRevision`. Publiczne share'y, usuwanie sesji, paginacja historii i OpenAPI pozostają specyfikacją. Obecny link w UI odtwarza tylko współrzędne. Dokument opisuje również docelowe elementy niewdrożone; szczegóły obecnego zakresu w [raporcie integracji](12-integracja-live.md).
 
 ## Sesja i dostęp
 
@@ -50,13 +50,13 @@ type SearchInput = {
   fovDeg: number; // szerokość pola, nie promień
   fromUtc: string | null;
   toUtc: string | null;
-  release: 'qr2' | 'qr3';
+  release: 'dr1' | 'qr3';
 };
 
 type Observation = {
   id: string;
   sourceId: string;
-  release: 'qr2' | 'qr3';
+  release: 'dr1' | 'qr3';
   observedAtUtc: string;
   originalTime: { value: string; format: string; scale: string };
   detector: string;

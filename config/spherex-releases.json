@@ -1,0 +1,7 @@
+{
+  "defaultRelease": "dr1",
+  "releases": [
+    { "id": "dr1", "label": "DR1", "collection": "spherex_dr1", "productPath": "/ibe/data/spherex/dr1/level2/", "enabled": true },
+    { "id": "qr3", "label": "QR3", "collection": "spherex_qr3", "productPath": "/ibe/data/spherex/qr3/level2/", "enabled": true }
+  ]
+}

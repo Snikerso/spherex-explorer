@@ -1,11 +1,13 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { DomainError, type SearchInput, type ViewPatch, type ViewState } from '@spherex/contracts';
+import { DomainError, framesShareBand, type SearchInput, type ViewPatch, type ViewState } from '@spherex/contracts';
 import type { AnnotationInput, ObservationPort, ToolCall, ViewUpdate, WorkspacePort } from './ports.js';
 
 export interface ActionContext {
   sessionId: string;
   runId: string;
   expectedRevision: number;
+  source?: 'user' | 'agent';
+  onToolResult?: (name: string, ok: boolean) => void;
   signal?: AbortSignal;
   onToolCall?: (call: ToolCall) => void;
   onViewUpdate?: (update: ViewUpdate) => void;
@@ -16,13 +18,15 @@ export interface ActionContext {
 export class AgentActions {
   constructor(private readonly workspace: WorkspacePort, private readonly observations: ObservationPort, private readonly context: ActionContext) {}
 
+  toolResult(name: string, ok: boolean) { this.context.onToolResult?.(name, ok); }
+
   private record(name: string, args: unknown) {
     this.context.signal?.throwIfAborted();
     this.context.onToolCall?.({ name, arguments: args });
   }
   private async commit(patch: ViewPatch) {
     this.context.signal?.throwIfAborted();
-    const state = await this.workspace.patch(this.context.sessionId, patch, this.context.expectedRevision, 'agent');
+    const state = await this.workspace.patch(this.context.sessionId, patch, this.context.expectedRevision, this.context.source ?? 'agent');
     this.context.expectedRevision = state.viewRevision;
     this.context.onViewUpdate?.({ state, changedFields: Object.keys(patch) });
     return state;
@@ -41,6 +45,17 @@ export class AgentActions {
     await this.commit({ searchId: result.id });
     return result;
   }
+  async selectObservations(args: { detector: string; limit: number }) {
+    this.record('select_observations', args);
+    const view = await this.workspace.get(this.context.sessionId);
+    const search = view.searchId ? await this.observations.getSearch(this.context.sessionId, view.searchId) : null;
+    if (!search) throw new DomainError('RESOURCE_NOT_FOUND', 'Najpierw wyszukaj obserwacje.');
+    const selected = search.observations.filter(item => item.detector === args.detector).sort((a, b) => a.observedAtUtc.localeCompare(b.observedAtUtc));
+    const times = new Set<string>();
+    const ids = selected.filter(item => { if (times.has(item.observedAtUtc)) return false; times.add(item.observedAtUtc); return true; }).slice(0, Math.min(500, args.limit)).map(item => item.id);
+    if (ids.length < 2) throw new DomainError('NO_COMPARABLE_FRAMES', 'Ten detektor nie ma co najmniej dwóch różnych czasów obserwacji.');
+    return this.commit({ selectedObservationIds: ids });
+  }
   async prepareSequence(args: { searchId: string; observationIds: string[] }) {
     this.record('prepare_sequence', args);
     const search = await this.observations.getSearch(this.context.sessionId, args.searchId);
@@ -49,8 +64,8 @@ export class AgentActions {
     if (view.searchId !== search.id) throw new DomainError('VIEW_CONFLICT', 'Wybrano już inne wyszukiwanie.');
     const ids = new Set(args.observationIds);
     const selected = search.observations.filter((observation) => ids.has(observation.id));
-    if (ids.size !== args.observationIds.length || ids.size < 2 || ids.size > 24 || selected.length !== ids.size) {
-      throw new DomainError('INVALID_SELECTION', 'Wybierz od 2 do 24 różnych obserwacji z bieżącego wyszukiwania.');
+    if (ids.size !== args.observationIds.length || ids.size < 2 || ids.size > 500 || selected.length !== ids.size) {
+      throw new DomainError('INVALID_SELECTION', 'Wybierz co najmniej 2 różnych obserwacji z bieżącego wyszukiwania.');
     }
     if (new Set(selected.map((observation) => observation.comparisonGroup)).size !== 1 || new Set(selected.map((observation) => observation.observedAtUtc)).size < 2) {
       throw new DomainError('NO_COMPARABLE_FRAMES', 'Wybrane klatki nie tworzą porównywalnej sekwencji z różnych dat.');
@@ -65,6 +80,12 @@ export class AgentActions {
     });
     return sequence;
   }
+  async getSequence(args: { sequenceId: string }) {
+    this.record('get_sequence', args);
+    const sequence = await this.observations.getSequence(this.context.sessionId, args.sequenceId);
+    if (!sequence) throw new DomainError('RESOURCE_NOT_FOUND', 'Sekwencja niedostępna.');
+    return sequence;
+  }
   async setView(args: { sequenceId: string; mode: ViewState['mode']; frameIds: string[] }) {
     this.record('set_view', args);
     const sequence = await this.observations.getSequence(this.context.sessionId, args.sequenceId);
@@ -72,12 +93,14 @@ export class AgentActions {
     if (sequence.status !== 'ready' || args.frameIds.length === 0 || new Set(args.frameIds).size !== args.frameIds.length || args.frameIds.some((id) => !sequence.frameIds.includes(id))) {
       throw new DomainError('INVALID_SELECTION', 'Wybierz przygotowane klatki z tej sekwencji.');
     }
+    if (!framesShareBand(sequence, args.frameIds)) throw new DomainError('INVALID_SELECTION', 'Porównanie wymaga klatek jednego pasma.');
     if (args.mode !== 'single' && args.frameIds.length < 2) throw new DomainError('NO_COMPARABLE_FRAMES', 'Porównanie wymaga przynajmniej dwóch klatek.');
     return this.commit({ sequenceId: sequence.id, frameIds: args.frameIds, mode: args.mode, playing: false });
   }
   async setPlayback(args: { playing: boolean; fps: number }) {
     this.record('set_playback', args);
-    return this.commit(args);
+    const view = await this.workspace.get(this.context.sessionId);
+    return this.commit({ ...args, ...(args.playing && view.mode === 'single' ? { mode: 'blink' as const } : {}) });
   }
   async getSelection() {
     this.record('get_selection', {});

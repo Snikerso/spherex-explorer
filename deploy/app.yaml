@@ -1,0 +1,42 @@
+name: spherex-explorer
+region: fra
+services:
+  - name: explorer
+    github:
+      repo: Snikerso/spherex-explorer
+      branch: codex/app-platform
+      deploy_on_push: true
+    dockerfile_path: Dockerfile
+    source_dir: /
+    http_port: 8080
+    instance_count: 1
+    instance_size_slug: apps-s-1vcpu-2gb
+    health_check:
+      http_path: /api/v1/health/ready
+      initial_delay_seconds: 30
+    envs:
+      - key: NODE_ENV
+        value: production
+        scope: RUN_TIME
+      - key: APP_ORIGIN
+        value: ${APP_URL}
+        scope: RUN_TIME
+      - key: DATA_MODE
+        value: live
+        scope: RUN_TIME
+      - key: OPENAI_MODEL
+        value: gpt-6.1-sol
+        scope: RUN_TIME
+      - key: OPENAI_REASONING_EFFORT
+        value: low
+        scope: RUN_TIME
+ingress:
+  rules:
+    - component:
+        name: explorer
+      match:
+        path:
+          prefix: /
+alerts:
+  - rule: DEPLOYMENT_FAILED
+  - rule: DOMAIN_FAILED

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { applyViewPatch, DomainError, initialView, type ViewPatch, type ViewState } from '@spherex/contracts';
+import type { Model } from 'mongoose';
+import { applyViewPatch, DomainError, initialView, viewStateSchema, type ViewPatch, type ViewState } from '@spherex/contracts';
 import type { ViewRecord } from '../../database/models.js';
 
 @Injectable()
@@ -12,7 +12,7 @@ export class WorkspaceService {
     const document = await this.views.findOneAndUpdate({ sessionId }, {
       $setOnInsert: { sessionId, state: initialView() },
     }, { upsert: true, returnDocument: 'after' }).lean();
-    return document!.state;
+    return viewStateSchema.parse(document!.state);
   }
 
   async patch(sessionId: string, patch: ViewPatch, expectedRevision: number, source: ViewState['lastChangedBy']): Promise<ViewState> {

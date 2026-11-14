@@ -149,3 +149,22 @@ describe('scenariusze narzędzi agenta — bez wywołania modelu', () => {
     expect((await s.workspace.get('session-a')).fps).toBe(1);
   });
 });
+
+
+describe('deterministyczny wybór obserwacji przez agenta', () => {
+  it('wybiera dokładnie wskazany detektor i odrębne czasy zamiast przepisywania identyfikatorów', async () => {
+    const s = setup(); const result = await s.search();
+    const stored = s.observations.searches.get(result.id)!;
+    stored.observations.unshift({ id: 'wrong-detector-first', observedAtUtc: '2025-01-01T00:00:00Z', detector: 'SPHEREx-D3', comparisonGroup: 'wrong' });
+    stored.observations.push({ id: 'duplicate-time', observedAtUtc: '2025-12-17T00:00:00Z', detector: 'SPHEREx-D1', comparisonGroup: 'demo-qr3-same-wave' });
+    const selected = await s.actions.selectObservations({ detector: 'SPHEREx-D1', limit: 24 });
+    expect(selected.selectedObservationIds).toEqual(['demo-epoch-a', 'demo-epoch-b']);
+    expect(selected.lastChangedBy).toBe('agent');
+  });
+  it('włącza Blink przy odtwarzaniu pojedynczego obrazu i zachowuje wybrane A/B', async () => {
+    const s = setup(); const sequence = await s.prepare();
+    await s.actions.setView({ sequenceId: sequence.id, mode: 'single', frameIds: sequence.frameIds });
+    await s.actions.setPlayback({ playing: true, fps: 1 });
+    expect(await s.actions.getSelection()).toMatchObject({ mode: 'blink', playing: true });
+  });
+});
