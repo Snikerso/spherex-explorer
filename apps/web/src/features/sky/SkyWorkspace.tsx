@@ -124,8 +124,8 @@ export function SkyWorkspace(props: SkyWorkspaceProps) {
         activeFrameId={currentFrame?.id}
         disabled={processing || explorer.preparing || explorer.busy || Boolean(explorer.runId)}
         onChange={setDetectors}
-        onPrepare={() => {
-          void explorer.prepareBands(detectors);
+        onPrepare={(observationIds) => {
+          void explorer.prepareBands(detectors, observationIds);
         }}
         onActivate={(frameIds) => patch({ frameIds, playing: false, selectedPoint: null })}
       />

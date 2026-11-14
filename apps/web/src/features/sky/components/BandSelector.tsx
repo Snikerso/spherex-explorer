@@ -1,6 +1,8 @@
+import { ObservationSelectionGrid } from './ObservationSelectionGrid';
 import { PopupDetails } from '../../../shared/components/PopupDetails';
 import { t } from '../../../shared/i18n/index';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { sampleObservations } from '../observation-selection';
 import type { Observation, SequenceBand } from '@spherex/contracts';
 
 type Props = {
@@ -14,7 +16,7 @@ type Props = {
   preparedBands?: SequenceBand[];
   activeFrameId?: string;
   onChange: (detectors: string[]) => void;
-  onPrepare: () => void;
+  onPrepare: (observationIds: string[]) => void;
   onActivate: (frameIds: string[]) => void;
 };
 
@@ -32,6 +34,16 @@ export function BandSelector({
   onPrepare,
   onActivate,
 }: Props) {
+  const [imageBand, setImageBand] = useState<string | null>(null);
+  const [percent, setPercent] = useState(100);
+  const [overrides, setOverrides] = useState<Record<string, boolean>>({});
+  const sampled = new Set(sampleObservations(observations, percent));
+  const isSelected = (id: string) => overrides[id] ?? sampled.has(id);
+  const changePercent = (value: number) => {
+    if (!Number.isFinite(value)) return;
+    setPercent(Math.min(100, Math.max(1, Math.round(value))));
+    setOverrides({});
+  };
   const bands = [1, 2, 3, 4, 5, 6].map((number) => {
     const detector = `SPHEREx-D${number}`;
     const items = observations.filter((item) => item.detector === detector);
@@ -50,7 +62,8 @@ export function BandSelector({
   });
   const available = bands.filter((band) => band.usable).map((band) => band.detector);
   const visible = observations.filter((item) => detectors.includes(item.detector ?? ''));
-  const selected = visible;
+  const activeImageBand = imageBand && detectors.includes(imageBand) ? imageBand : null;
+  const selected = visible.filter((item) => isSelected(item.id));
   const valid =
     detectors.length > 0 &&
     detectors.every((detector) => {
@@ -96,11 +109,96 @@ export function BandSelector({
         className="prepare-bands"
         disabled={disabled || !valid}
         onClick={() => {
-          onPrepare();
+          onPrepare(selected.map((item) => item.id));
         }}
       >
         {t('Przygotuj zdjęcia')} <span>({selected.length})</span>
       </button>
+      <section className="image-sampling" aria-label={t('Wybór zdjęć')}>
+        <div className="sampling-controls">
+          <label htmlFor="image-percent">{t('Udział zdjęć')}</label>
+          <input
+            id="image-percent"
+            type="range"
+            min="1"
+            max="100"
+            value={percent}
+            disabled={disabled}
+            onChange={(event) => changePercent(Number(event.target.value))}
+          />
+          <input
+            className="sampling-number"
+            type="number"
+            min="1"
+            max="100"
+            aria-label={t('Procent zdjęć')}
+            value={percent}
+            disabled={disabled}
+            onChange={(event) => changePercent(Number(event.target.value))}
+          />
+          <span>%</span>
+          <span>{t('Wybrano {0} z {1}', selected.length, visible.length)}</span>
+          <button type="button" disabled={disabled} onClick={() => changePercent(100)}>
+            {t('Wszystkie')}
+          </button>
+        </div>
+        <small>
+          {t(
+            'Równomiernie w czasie, minimum 2 zdjęcia na pasmo. Zmiana procentu resetuje ręczne wybory.',
+          )}
+        </small>
+        <details className="individual-images">
+          <summary>
+            {t('Edytuj pojedyncze zdjęcia')} · {selected.length}/{visible.length}
+            {Object.keys(overrides).length ? ` · ${t('Wybór ręczny')}` : ''}
+          </summary>
+          <nav className="image-band-tabs" aria-label={t('Filtr zdjęć według pasma')}>
+            <button
+              type="button"
+              aria-pressed={activeImageBand === null}
+              onClick={() => setImageBand(null)}
+            >
+              {t('Wszystkie')}{' '}
+              <small>
+                {selected.length}/{visible.length}
+              </small>
+            </button>
+            {bands
+              .filter((band) => detectors.includes(band.detector))
+              .map((band) => (
+                <button
+                  type="button"
+                  key={band.detector}
+                  aria-pressed={activeImageBand === band.detector}
+                  onClick={() => setImageBand(band.detector)}
+                >
+                  {band.label}{' '}
+                  <small>
+                    {selected.filter((item) => item.detector === band.detector).length}/{band.count}
+                  </small>
+                </button>
+              ))}
+          </nav>
+          <ObservationSelectionGrid
+            observations={visible}
+            detectors={
+              activeImageBand
+                ? [activeImageBand]
+                : bands
+                    .filter((band) => detectors.includes(band.detector))
+                    .map((band) => band.detector)
+            }
+            isSelected={isSelected}
+            disabled={disabled}
+            onToggle={(id) => setOverrides((previous) => ({ ...previous, [id]: !isSelected(id) }))}
+          />
+        </details>
+        {!valid && visible.length > 0 && (
+          <p role="status">
+            {t('Wybierz co najmniej 2 zdjęcia z różnych czasów dla każdego zaznaczonego pasma.')}
+          </p>
+        )}
+      </section>
       {result && (
         <PopupDetails className="sequence-result">
           <summary title={t('Wynik ostatniego przygotowania i przyczyny pominięcia zdjęć')}>

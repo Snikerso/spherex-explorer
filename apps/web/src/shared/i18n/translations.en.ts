@@ -1,4 +1,20 @@
 export const english: Record<string, string> = {
+  'Kliknij kwadrat, aby zmienić wybór. Od lewej: od najstarszych zdjęć.':
+    'Click a square to toggle an image. Oldest images on the left.',
+  Wybrane: 'Selected',
+  Pominięte: 'Excluded',
+  'Filtr zdjęć według pasma': 'Filter images by band',
+  'Wybór zdjęć': 'Image selection',
+  'Udział zdjęć': 'Dataset sample',
+  'Procent zdjęć': 'Image percentage',
+  'Wybrano {0} z {1}': 'Selected {0} of {1}',
+  'Równomiernie w czasie, minimum 2 zdjęcia na pasmo. Zmiana procentu resetuje ręczne wybory.':
+    'Evenly spaced in time, at least 2 images per band. Changing the percentage resets manual selections.',
+  'Edytuj pojedyncze zdjęcia': 'Edit individual images',
+  'Wybór ręczny': 'Custom selection',
+  'Wybierz co najmniej 2 zdjęcia z różnych czasów dla każdego zaznaczonego pasma.':
+    'Select at least 2 images at different times for each enabled band.',
+
   '{0} mln km': '{0} million km',
   'Brak w okresie': 'unavailable in this time window',
   '{0} klatek': '{0} frames',

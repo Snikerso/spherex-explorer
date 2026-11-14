@@ -393,16 +393,18 @@ export function useExplorer() {
       setPreparing(false);
     }
   }
-  async function prepareBands(detectors: string[]) {
+  async function prepareBands(detectors: string[], observationIds?: string[]) {
     setPreparing(true);
     await manualQueue.current.catch(() => {});
     try {
       const queued = await api<Sequence>('/band-sequences', {
         searchId: latest.current.searchId,
         detectors,
-        observationIds: search?.observations
-          .filter((item) => detectors.includes(item.detector ?? ''))
-          .map((item) => item.id),
+        observationIds:
+          observationIds ??
+          search?.observations
+            .filter((item) => detectors.includes(item.detector ?? ''))
+            .map((item) => item.id),
         expectedRevision: latest.current.viewRevision,
       });
       setJob({
