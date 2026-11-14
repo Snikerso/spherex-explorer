@@ -235,6 +235,29 @@ describe('Explorer REST: ownership, live search, cancellation and SSE replay', (
     expect(text).toContain(`id: ${id}:3`);
     expect((await call(`/agent/runs/${id}/events`, b.cookie)).status).toBe(404);
   });
+  it('keeps legacy sessions usable after the selection limit was reduced', async () => {
+    const a = await session();
+    await call('/view', a.cookie);
+    await store.collection('views').updateOne(
+      { sessionId: a.sessionId },
+      {
+        $set: {
+          'state.selectedObservationIds': Array.from({ length: 259 }, (_, i) => `legacy-${i}`),
+        },
+      },
+    );
+    const response = await call('/view', a.cookie);
+    expect(response.status).toBe(200);
+    const state = await response.json();
+    expect(state.selectedObservationIds).toHaveLength(259);
+    const updated = await call(
+      '/view',
+      a.cookie,
+      { patch: { fps: 1 }, expectedRevision: state.viewRevision },
+      'PATCH',
+    );
+    expect(updated.status).toBe(200);
+  });
   it('rejects more than 64 images before preparing a sequence', async () => {
     const a = await session();
     const ids = Array.from({ length: 65 }, (_, index) => `image-${index}`);

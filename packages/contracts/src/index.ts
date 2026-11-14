@@ -25,7 +25,7 @@ export const viewStateSchema = z.object({
   searchInput: searchInputSchema.nullable(),
   searchId: identifier.nullable(),
   searchRequestId: identifier.nullable(),
-  selectedObservationIds: z.array(identifier).max(MAX_SELECTED_OBSERVATIONS),
+  selectedObservationIds: z.array(identifier).max(500),
   jobId: identifier.nullable(),
   sequenceId: identifier.nullable(),
   frameIds: z.array(identifier).max(500),
@@ -41,7 +41,7 @@ export const viewStateSchema = z.object({
   lastChangedBy: z.enum(['user', 'agent', 'system']),
 }).strict();
 export type ViewState = z.infer<typeof viewStateSchema>;
-export const viewPatchSchema = viewStateSchema.omit({ viewRevision: true, lastChangedBy: true }).partial().strict();
+export const viewPatchSchema = viewStateSchema.omit({ viewRevision: true, lastChangedBy: true }).extend({ selectedObservationIds: z.array(identifier).max(MAX_SELECTED_OBSERVATIONS) }).partial().strict();
 export type ViewPatch = z.infer<typeof viewPatchSchema>;
 
 // Szkielet REST udostępnia edycję filtrów i odtwarzacza. Referencje do danych

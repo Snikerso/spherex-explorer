@@ -112,8 +112,8 @@ export function useExplorer() {
           api<ReleaseCatalog>('/data-releases'),
         ]);
         if (disposed) return;
-        ready = true;
         accept(state);
+        ready = true;
         setTargets(catalog);
         setReleases(releaseList);
         setCapabilities(caps);
