@@ -35,9 +35,23 @@ export function SkyTimeline({ explorer, sky }: Pick<SkyWorkspaceProps, 'explorer
             |◁
           </button>
           <button
-            disabled={frames.length < 2 || !imagesReady || view.mode === 'single'}
+            disabled={frames.length < 2 || !imagesReady}
+            title={
+              frames.length < 2
+                ? t('Odtwarzanie wymaga co najmniej 2 klatek.')
+                : !imagesReady
+                  ? t('Trwa wczytywanie klatek…')
+                  : view.playing
+                    ? t('Pauza')
+                    : t('Odtwórz')
+            }
             aria-label={view.playing ? t('Pauza') : t('Odtwórz')}
-            onClick={() => patch({ playing: !view.playing })}
+            onClick={() =>
+              patch({
+                playing: !view.playing,
+                ...(!view.playing && view.mode === 'single' ? { mode: 'blink' } : {}),
+              })
+            }
           >
             {view.playing ? 'Ⅱ' : '▷'}
           </button>

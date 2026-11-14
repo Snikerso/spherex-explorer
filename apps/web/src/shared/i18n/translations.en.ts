@@ -1,4 +1,6 @@
 export const english: Record<string, string> = {
+  'Trwa wczytywanie klatek…': 'Loading frames\u2026',
+  'Odtwarzanie wymaga co najmniej 2 klatek.': 'Playback requires at least 2 frames.',
   'Do {0}': 'To {0}',
   'Od {0}': 'From {0}',
   'Okno {0}': 'Window {0}',
