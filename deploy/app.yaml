@@ -1,5 +1,7 @@
 name: spherex-explorer
 region: fra
+egress:
+  type: DEDICATED_IP
 services:
   - name: explorer
     github:
