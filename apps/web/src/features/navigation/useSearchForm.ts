@@ -3,7 +3,7 @@ import { parseExplorerLink, explorerLink, searchInputSchema } from '@spherex/con
 import { t } from '../../shared/i18n';
 import type { ExplorerController } from '../explorer/useExplorer';
 import { defaultInput, formFrom } from './search-form';
-export function useSearchForm(explorer: ExplorerController, resetSelection: () => void) {
+export function useSearchForm(explorer: ExplorerController) {
   const { view, targets } = explorer;
   const [draft, setDraft] = useState(() => {
     return formFrom(parseExplorerLink(location.search) ?? defaultInput);
@@ -61,7 +61,11 @@ export function useSearchForm(explorer: ExplorerController, resetSelection: () =
   }
   function choose(id: string) {
     const item = targets.find((target) => target.id === id);
-    if (!item) return;
+    if (!item) {
+      dirty.current.add('target');
+      setTargetId(null);
+      return;
+    }
     dirty.current.add('target');
     dirty.current.add('ra');
     dirty.current.add('dec');
@@ -85,10 +89,9 @@ export function useSearchForm(explorer: ExplorerController, resetSelection: () =
   }
   async function doSearch() {
     const input = validatedInput();
-    if (!input) return;
+    if (!input) return false;
     dirty.current.clear();
-    resetSelection();
-    await explorer.searchObservations(input, targetId);
+    return await explorer.searchObservations(input, targetId);
   }
   async function send(command: string) {
     const input = validatedInput();
@@ -123,6 +126,11 @@ export function useSearchForm(explorer: ExplorerController, resetSelection: () =
     view.searchInput && JSON.stringify(formFrom(view.searchInput)) !== JSON.stringify(draft);
   const target = targets.find((item) => item.id === targetId);
   return {
+    restoreForm: (input: typeof defaultInput, id: string | null) => {
+      dirty.current.clear();
+      setDraft(formFrom(input));
+      setTargetId(id);
+    },
     draft,
     targetId,
     target,

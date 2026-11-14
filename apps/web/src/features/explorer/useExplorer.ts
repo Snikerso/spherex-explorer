@@ -36,6 +36,7 @@ export function useExplorer() {
   const [connected, setConnected] = useState(false);
   const [notice, setNotice] = useState('Łączenie z backendem…');
   const [busy, setBusy] = useState(false);
+  const [searchError, setSearchError] = useState('');
   const [preparing, setPreparing] = useState(false);
   const [runId, setRunId] = useState<string | null>(null);
   const [tool, setTool] = useState('');
@@ -312,6 +313,7 @@ export function useExplorer() {
     const abort = new AbortController();
     searchAbort.current = abort;
     setBusy(true);
+    setSearchError('');
     setNotice('Wyszukiwanie rzeczywistych obserwacji w IRSA…');
     try {
       const result = await api<SearchResult>(
@@ -329,11 +331,37 @@ export function useExplorer() {
           result.truncated ? ` z ${result.total}` : '',
         ),
       );
+      return true;
     } catch (error) {
       if (!abort.signal.aborted) {
+        setSearchError(
+          error instanceof Error
+            ? error.message
+            : t('Nie udało się wyszukać zdjęć. Poprzednie wyniki zostały zachowane.'),
+        );
         report(error);
         await refresh().catch(() => {});
       }
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function restoreSearch(id: string) {
+    setBusy(true);
+    try {
+      await manualQueue.current.catch(() => {});
+      const state = accept(
+        await api<ViewState>(`/search-history/${id}/restore`, {
+          expectedRevision: latest.current.viewRevision,
+        }),
+      );
+      setNotice(t('Przywrócono wyszukiwanie z historii.'));
+      return state;
+    } catch (error) {
+      report(error);
+      await refresh().catch(() => {});
+      throw error;
     } finally {
       setBusy(false);
     }
@@ -372,7 +400,9 @@ export function useExplorer() {
       const queued = await api<Sequence>('/band-sequences', {
         searchId: latest.current.searchId,
         detectors,
-        observationIds: latest.current.selectedObservationIds,
+        observationIds: search?.observations
+          .filter((item) => detectors.includes(item.detector ?? ''))
+          .map((item) => item.id),
         expectedRevision: latest.current.viewRevision,
       });
       setJob({
@@ -459,6 +489,8 @@ export function useExplorer() {
     patch,
     searchObservations,
     prepare,
+    restoreSearch,
+    searchError,
     prepareBands,
     send,
     saveNote,

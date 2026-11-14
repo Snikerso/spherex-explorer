@@ -1,3 +1,4 @@
+import { cleanRemoteStorage } from '../storage/cleanup.js';
 import {
   Inject,
   Injectable,
@@ -91,7 +92,7 @@ export class MaintenanceService implements OnApplicationBootstrap, OnModuleDestr
         .find({})
         .project({ id: 1, status: 1 })
         .toArray();
-      return cleanCache(
+      const localRemoved = await cleanCache(
         cacheRoot,
         new Set(sequences.map((sequence) => sequence.id as string)),
         before,
@@ -101,6 +102,14 @@ export class MaintenanceService implements OnApplicationBootstrap, OnModuleDestr
             .map((sequence) => sequence.id as string),
         ),
       );
+      const remoteRemoved = await cleanRemoteStorage(
+        sequences.map((sequence) => ({
+          id: sequence.id as string,
+          status: sequence.status as string,
+        })),
+        before,
+      );
+      return localRemoved + remoteRemoved;
     });
     if (sessions || removed)
       this.logger.log(

@@ -148,3 +148,18 @@ NASA SPHEREx observations are provided through [NASA/IPAC IRSA](https://irsa.ipa
 The project was developed by a solo participant. OpenAI models power the optional copilot; OpenAI Codex assisted with development, debugging, and documentation. Astronomical observations are archive data, not generated images. The original UI concept mockup was AI-generated and is labelled as a design reference. The submission package tracks remaining media disclosures and credits. This is an independent challenge entry; it does not imply NASA endorsement.
 
 No project code license has been selected in this repository. Third-party data and dependencies retain their respective terms.
+
+### Historia wyszukiwań
+
+Zakładka **04 · History** pokazuje zapisane wyszukiwania bieżącej sesji, po 30 wpisów
+z możliwością pobrania starszych. Każdy wpis zawiera czas wyszukiwania, RA/Dec, FOV,
+wydanie archiwum, zakres dat, liczbę obserwacji i dostępność gotowej sekwencji.
+Przywrócenie nie odpytuje IRSA: odtwarza zapisany wynik i najnowszą gotową sekwencję
+powiązaną z wyszukiwaniem. Starsze sekwencje bez `searchId` są dopasowywane po wszystkich
+parametrach wyszukiwania oraz identyfikatorach obserwacji. Jeśli nie ma gotowej sekwencji,
+przywracane są parametry i wyniki do ponownego przygotowania. Odtwarzanie jest zatrzymane.
+Przywrócenie podczas aktywnego zadania/agenta lub przy nieaktualnej rewizji jest odrzucane.
+Historia korzysta z istniejących kolekcji `searches`/`sequences`; automatyczne sprzątanie
+sesji obejmuje ją tak samo jak pozostałe dane. Nie jest historią konta między przeglądarkami.
+API: `GET /api/v1/search-history?cursor=...`, `POST /api/v1/search-history/:id/restore`
+z `{expectedRevision}`. Wszystkie odczyty i przywrócenia są ograniczone do właściciela sesji.

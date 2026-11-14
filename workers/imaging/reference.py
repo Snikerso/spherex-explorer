@@ -23,7 +23,7 @@ def render(path, grid):
                                             shape_out=(grid['height'], grid['width']))
         def timestamp(key):
             try:
-                return Time(float(hdu.header[key]), format='mjd').utc.isot + 'Z'
+                return Time(float(hdu.header.get(key, hdu.header.get(key.replace('_', '')))), format='mjd').utc.isot + 'Z'
             except (KeyError, ValueError, TypeError):
                 return None
         start, end = timestamp('MJD_MIN'), timestamp('MJD_MAX')

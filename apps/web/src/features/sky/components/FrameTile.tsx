@@ -1,3 +1,5 @@
+import { GaiaOverlay } from '../../catalogs/GaiaOverlay';
+import { gaiaPosition } from '@spherex/contracts';
 import { pixelToSky, skyToPixel } from '@spherex/contracts';
 import { t } from '../../../shared/i18n';
 import { formatDate } from '../../../shared/lib/date';
@@ -44,6 +46,18 @@ export function FrameTile({
           }}
           onClick={selectPoint}
         >
+          {sky.gaia.data && sequence?.grid && (
+            <GaiaOverlay
+              sources={sky.gaia.data.sources}
+              grid={sequence.grid}
+              utc={frame.observedAtUtc}
+              select={(source) => {
+                sky.setGaiaSource(source);
+                const { raDeg, decDeg } = gaiaPosition(source, frame.observedAtUtc);
+                patch({ selectedPoint: { raDeg, decDeg }, playing: false });
+              }}
+            />
+          )}
           <SkyImage
             sequenceId={sequence!.id}
             frames={[frame]}

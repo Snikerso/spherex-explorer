@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { HistoryPanel } from './features/history/HistoryPanel';
+import { PopupDetails } from './shared/components/PopupDetails';
+import { useRef, useState } from 'react';
 import { t, useLanguage } from './shared/i18n';
 import { useExplorer } from './features/explorer/useExplorer';
 import { useSearchForm } from './features/navigation/useSearchForm';
@@ -19,6 +21,7 @@ export function App() {
   const explorer = useExplorer();
   const { view, targets, sequence, job } = explorer;
   const [tab, setTab] = useState<CockpitTab>('sky');
+  const targetMenu = useRef<HTMLDetailsElement>(null);
   const sky = useSkyWorkspace(explorer, tab);
   const {
     draft,
@@ -31,7 +34,8 @@ export function App() {
     copyLink,
     shareText,
     pendingForm,
-  } = useSearchForm(explorer, () => sky.setDetectors([]));
+    restoreForm,
+  } = useSearchForm(explorer);
   const {
     currentFrame,
     observation,
@@ -50,7 +54,42 @@ export function App() {
     >
       <MissionHeader connected={explorer.connected} />
       <ActivityStatus explorer={explorer} />
-      <CockpitTabs value={tab} onChange={setTab} />
+      <CockpitTabs
+        value={tab}
+        onChange={(value) => {
+          if (value === 'history') setDiscovery(null);
+          setTab(value);
+        }}
+      />
+      <PopupDetails className="target-menu" ref={targetMenu}>
+        <summary>
+          <span>
+            <b>1 · {t('Cel')}</b> {target?.name ?? t('Własne współrzędne')}
+          </span>
+          <span>
+            RA {Number(draft.ra).toFixed(4)}° · DEC {Number(draft.dec).toFixed(4)}° · FOV{' '}
+            {draft.fov}°
+          </span>
+          <strong>{t('Zmień cel')} ⌄</strong>
+        </summary>
+        <SearchPanel
+          explorer={explorer}
+          draft={draft}
+          targetId={targetId}
+          target={target}
+          active
+          pendingForm={Boolean(pendingForm)}
+          choose={choose}
+          edit={edit}
+          doSearch={async () => {
+            const valid = await doSearch();
+            if (valid) {
+              if (targetMenu.current) targetMenu.current.open = false;
+              setTab('sky');
+            }
+          }}
+        />
+      </PopupDetails>
       {discovery === 'compare' && sequence && (
         <EpochComparePanel
           sequenceId={sequence.id}
@@ -71,19 +110,25 @@ export function App() {
         />
       )}
       <div className="workspace" data-panel={tab}>
-        <SearchPanel
-          explorer={explorer}
-          draft={draft}
-          targetId={targetId}
-          target={target}
-          active={tab === 'nav'}
-          pendingForm={Boolean(pendingForm)}
-          choose={choose}
-          edit={edit}
-          doSearch={doSearch}
-        />
-        <section className={`center ${tab === 'sky' ? 'mobile-active' : ''}`}>
-          {tab === 'nav' ? (
+        <section className={`center ${tab === 'sky' || tab === 'history' ? 'mobile-active' : ''}`}>
+          {tab === 'history' ? (
+            <HistoryPanel
+              currentId={view.searchId}
+              disabled={
+                !explorer.connected ||
+                explorer.busy ||
+                explorer.preparing ||
+                Boolean(explorer.runId) ||
+                job?.status === 'running' ||
+                job?.status === 'queued'
+              }
+              onRestore={async (id) => {
+                const state = await explorer.restoreSearch(id);
+                if (state.searchInput) restoreForm(state.searchInput, state.targetId);
+                setTab('sky');
+              }}
+            />
+          ) : tab === 'nav' ? (
             <NavigationOrbit
               ra={draft.ra.trim() ? Number(draft.ra) : NaN}
               dec={draft.dec.trim() ? Number(draft.dec) : NaN}

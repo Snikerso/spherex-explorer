@@ -14,6 +14,8 @@ export async function createIndexes(connection: Connection) {
     await db.collection(name).createIndex({ sessionId: 1, createdAt: -1 });
   }
   for (const name of ['jobs', 'runs']) await db.collection(name).createIndex({ sessionId: 1 }, { unique: true, partialFilterExpression: { active: true } });
+  await db.collection('searches').createIndex({ sessionId: 1, createdAt: -1, id: -1 });
+  await db.collection('sequences').createIndex({ sessionId: 1, searchId: 1, createdAt: -1 });
   await db.collection('jobs').createIndex({ status: 1, leaseUntil: 1, createdAt: 1 });
   await db.collection('annotations').createIndex({ sessionId: 1, idempotencyKey: 1 }, { unique: true });
   await db.collection('runs').createIndex({ sessionId: 1, clientRequestId: 1 }, { unique: true });

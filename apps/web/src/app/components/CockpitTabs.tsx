@@ -1,5 +1,5 @@
 import { t } from '../../shared/i18n';
-export type CockpitTab = 'nav' | 'sky' | 'tools';
+export type CockpitTab = 'nav' | 'sky' | 'tools' | 'history';
 export function CockpitTabs({
   value,
   onChange,
@@ -13,6 +13,7 @@ export function CockpitTabs({
         ['nav', t('Nawigacja'), 'ORBITAL VIEW'],
         ['sky', t('Niebo'), 'SCIENCE IMAGERY'],
         ['tools', t('Instrumenty'), 'TELEMETRY'],
+        ['history', t('Historia'), 'SEARCH HISTORY'],
       ].map(([id, label, caption], index) => (
         <button
           key={id}

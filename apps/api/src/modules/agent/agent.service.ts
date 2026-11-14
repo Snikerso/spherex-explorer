@@ -1,3 +1,4 @@
+import { queryGaia } from '../catalogs/gaia.js';
 import { Inject, Injectable, OnModuleDestroy, OnModuleInit, ServiceUnavailableException } from '@nestjs/common';
 import { run, setTracingDisabled, type AgentInputItem } from '@openai/agents';
 import { randomUUID } from 'node:crypto';
@@ -68,7 +69,7 @@ export class AgentService implements OnModuleInit, OnModuleDestroy {
       const current = await this.workspace.get(sessionId);
       await emit('run.started', { messageId, viewRevision: current.viewRevision });
       const actions = new AgentActions(this.workspace, this.observations, {
-        sessionId, runId, expectedRevision: current.viewRevision, signal,
+        sessionId, runId, expectedRevision: current.viewRevision, signal, lookupGaia: queryGaia,
         onToolCall: call => { void emit('tool.started', { name: call.name }); },
         onToolResult: (name, ok) => { void emit('tool.completed', { name, ok }); },
         onViewUpdate: update => { void emit('view.updated', { state: update.state, changedFields: update.changedFields }); },

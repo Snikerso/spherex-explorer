@@ -1,3 +1,6 @@
+import { HistoryService } from './modules/history/history.service.js';
+import { HistoryController } from './modules/history/history.controller.js';
+import { CatalogsController } from './modules/catalogs/catalogs.controller.js';
 import { MaintenanceService } from './modules/maintenance/maintenance.service.js';
 import { ExplorerController } from './explorer.controller.js';
 import { Store } from './database/store.js';
@@ -17,7 +20,7 @@ import { WorkspaceService } from './modules/workspace/workspace.service.js';
     MongooseModule.forRoot(settings.MONGODB_URI, { autoIndex: false, serverSelectionTimeoutMS: 5000, retryAttempts: 1, maxPoolSize: 10, minPoolSize: 0 }),
     MongooseModule.forFeature([{ name: 'Session', schema: sessionSchema }, { name: 'View', schema: viewSchema }]),
   ],
-  controllers: [AppController, ExplorerController],
-  providers: [MaintenanceService, Store, ObservationsService, AgentService, SessionsService, WorkspaceService, SessionGuard, OriginGuard],
+  controllers: [HistoryController, AppController, ExplorerController, CatalogsController],
+  providers: [HistoryService, MaintenanceService, Store, ObservationsService, AgentService, SessionsService, WorkspaceService, SessionGuard, OriginGuard],
 })
 export class AppModule {}

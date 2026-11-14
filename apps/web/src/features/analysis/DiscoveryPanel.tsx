@@ -329,6 +329,21 @@ export function DiscoveryPanel({
           ))}
         </details>
       )}
+      <details className="analysis-method">
+        <summary>{t('Metoda i źródła')}</summary>
+        <p>
+          {t(
+            'Widmo jest podglądem pomiarów piksela z różnych ekspozycji i długości fal, z niepewnościami. Nie jest jednoczesnym pomiarem ani fotometrią PSF.',
+          )}
+        </p>
+        <a
+          href="https://caltech-ipac.github.io/irsa-tutorials/spherex-source-discovery-tool-demo/"
+          target="_blank"
+          rel="noreferrer"
+        >
+          IRSA / SPHEREx tutorial ↗
+        </a>
+      </details>
     </section>
   );
 }

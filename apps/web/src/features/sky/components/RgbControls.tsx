@@ -1,6 +1,12 @@
+import { PopupDetails } from '../../../shared/components/PopupDetails';
+import type { ReactNode } from 'react';
 import { t } from '../../../shared/i18n';
 import type { SkyWorkspaceProps } from '../types';
-export function RgbControls({ explorer, sky }: Pick<SkyWorkspaceProps, 'explorer' | 'sky'>) {
+export function RgbControls({
+  explorer,
+  sky,
+  catalogs,
+}: Pick<SkyWorkspaceProps, 'explorer' | 'sky'> & { catalogs?: ReactNode }) {
   const { sequence } = explorer;
   const {
     allFrames,
@@ -48,7 +54,8 @@ export function RgbControls({ explorer, sky }: Pick<SkyWorkspaceProps, 'explorer
           {exposure.toFixed(1)} EV
         </output>
       </label>
-      <details className="analysis-menu">
+      {catalogs}
+      <PopupDetails className="analysis-menu">
         <summary>{t('Analizy')}</summary>
         <div>
           <button
@@ -79,7 +86,7 @@ export function RgbControls({ explorer, sky }: Pick<SkyWorkspaceProps, 'explorer
             {t('Stacki D1–D6')}
           </button>
         </div>
-      </details>
+      </PopupDetails>
       <button onClick={() => setExposure(0)} title={t('Przywróć jasność początkową')}>
         Reset
       </button>

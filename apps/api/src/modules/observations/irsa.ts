@@ -1,3 +1,4 @@
+import { setTimeout as delay } from 'node:timers/promises';
 import { activeRelease, releaseCatalog } from './releases.js';
 import { createHash } from 'node:crypto';
 import {
@@ -72,10 +73,13 @@ export function parseSia(data: unknown, release: SearchInput['release']) {
   const resource = resources.find((entry) => entry.TABLE);
   if (!resource?.TABLE)
     throw new DomainError('DATA_SCHEMA_ERROR', 'Brak tabeli obserwacji w odpowiedzi archiwum.');
-  const statuses =
-    resource.INFO_ARRAY?.filter((info) => info['<xmlattr>'].name === 'QUERY_STATUS') ?? [];
+  const statuses = resources
+    .flatMap((resource) => resource.INFO_ARRAY ?? [])
+    .filter((info) => info['<xmlattr>'].name === 'QUERY_STATUS');
   if (statuses.some((info) => info['<xmlattr>'].value === 'ERROR'))
     throw new DomainError('DATA_SOURCE_ERROR', 'Archiwum odrzuciło zapytanie.');
+  if (statuses.some((info) => info['<xmlattr>'].value === 'OVERFLOW'))
+    throw new DomainError('DATA_LIMIT', 'IRSA ograniczyło wyniki. Zmniejsz pole lub zakres dat.');
   const names = resource.TABLE.FIELD_ARRAY.map((field) => field['<xmlattr>'].name);
   for (const required of [
     'access_url',
@@ -150,16 +154,41 @@ export class IrsaClient {
       const combined = signal
         ? AbortSignal.any([signal, AbortSignal.timeout(25000)])
         : AbortSignal.timeout(25000);
-      const response = await this.request(url, { signal: combined, redirect: 'error' });
-      if (!response.ok)
-        throw new DomainError(
-          'DATA_SOURCE_ERROR',
-          `Archiwum IRSA jest chwilowo niedostępne (HTTP ${response.status}).`,
-        );
-      return parseSia(
-        JSON.parse((await readLimited(response, 8 * 1024 * 1024)).toString('utf8')),
-        input.release,
-      );
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const response = await this.request(url, { signal: combined, redirect: 'error' });
+          if (!response.ok) {
+            await response.body?.cancel();
+            if (
+              (response.status >= 500 || response.status === 429) &&
+              attempt < 2 &&
+              !combined.aborted
+            ) {
+              await delay(300 * (attempt + 1), undefined, { signal: combined });
+              continue;
+            }
+            throw new DomainError(
+              'DATA_SOURCE_ERROR',
+              `Archiwum IRSA jest chwilowo niedostępne (HTTP ${response.status}).`,
+            );
+          }
+          const text = (await readLimited(response, 8 * 1024 * 1024)).toString('utf8');
+          let data: unknown;
+          try {
+            data = JSON.parse(text);
+          } catch {
+            throw new DomainError(
+              'DATA_SCHEMA_ERROR',
+              'IRSA nie zwróciło poprawnych metadanych. Spróbuj ponownie.',
+            );
+          }
+          return parseSia(data, input.release);
+        } catch (error) {
+          if (error instanceof DomainError || combined.aborted || attempt === 2) throw error;
+          await delay(300 * (attempt + 1), undefined, { signal: combined });
+        }
+      }
+      throw new Error('IRSA attempts exhausted');
     } catch (error) {
       if (error instanceof DomainError || signal?.aborted) throw error;
       throw new DomainError(

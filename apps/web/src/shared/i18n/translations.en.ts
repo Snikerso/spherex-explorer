@@ -466,4 +466,108 @@ export const english: Record<string, string> = {
   'propagacja dwuciałowa z FITS': 'two-body propagation from FITS',
   'Kliknięcie kwadracika zatrzymuje czas na wybranej ekspozycji. Pozycja archiwalna wykorzystuje SGT_LAT_MIDPT/SGT_LON_MIDPT oraz odległość od środka Ziemi z X_SC/Y_SC/Z_SC. Tor wyznaczamy z wektorów pozycji i prędkości tej samej ekspozycji jako elipsę dwuciałową. To przybliżenie bez perturbacji, nie dokładna efemeryda. Punkt satelity leży na tej samej elipsie. Cały tor pokazujemy względem orientacji Ziemi w jednym czasie, a nie jako ślad naziemny z różnych chwil. „Teraz” przywraca czas bieżący. Bez pozycji w FITS i odpowiedniego TLE widok pozostaje schematem poglądowym.':
     'Clicking a square freezes time at the selected exposure. The recorded ground track and geocentric distance anchor the satellite. Its position and velocity vectors define an approximate two-body ellipse, without perturbations; this is not a precise ephemeris. The satellite lies on that same ellipse. Every track point uses Earth’s orientation at one displayed time, rather than mixing ground-track times. “Now” restores the current time. Without recorded position or a suitable TLE, the scene remains illustrative.',
+  'Gwiazdy Gaia DR3': 'Gaia DR3 stars',
+  'Ruch własny uwzględniony': 'Proper motion applied',
+  'Pozycja katalogowa': 'Catalog position',
+  'Katalogi i archiwa': 'Catalogs and archives',
+  'Nakładka Gaia DR3': 'Gaia DR3 overlay',
+  'Wczytywanie katalogu…': 'Loading catalog…',
+  'Źródła w zapytaniu: {0}': 'Sources in query: {0}',
+  'Limit 300 najjaśniejszych źródeł. Katalog nie jest kompletny.':
+    'Limited to 300 brightest sources. This is not a complete catalog.',
+  'Kliknij znacznik na obrazie. Pozycje uwzględniają ruch własny, bez paralaksy i prędkości radialnej. Brak wpisu nie oznacza nowego obiektu.':
+    'Click a marker on the image. Positions include proper motion, without parallax or radial velocity. A missing entry does not imply a new object.',
+  Paralaksa: 'Parallax',
+  'Pozycja przybliżona na czas klatki': 'Approximate position at frame time',
+  'Brak pełnego ruchu własnego; pozycja katalogowa': 'Incomplete proper motion; catalog position',
+  'Archiwum Gaia': 'Gaia Archive',
+  'Porównaj z WISE': 'Compare with WISE',
+  'Wspólna siatka TAN · północ u góry · wschód po lewej': 'Shared TAN grid · north up · east left',
+  'Pasmo WISE': 'WISE band',
+  'Obrazy i epoki w IRSA': 'Images and epochs in IRSA',
+  'Mozaika wielu ekspozycji · dokładny okres niedostępny':
+    'Multi-exposure mosaic · exact time range unavailable',
+  'Pobieranie i wyrównywanie WISE…': 'Downloading and aligning WISE…',
+  'Źródłowy produkt AllWISE FITS': 'Original AllWISE FITS product',
+  'AllWISE to mozaika historycznych obserwacji, a nie pojedyncza klatka. Obrazy mają różne pasma, PSF i niezależny kontrast; porównanie jest wizualne, bez pomiaru zmian jasności i bez odejmowania między misjami.':
+    'AllWISE is a mosaic of historical observations, not a single exposure. Bands, PSFs and contrast differ; this is a visual comparison, without brightness-change measurements or cross-mission subtraction.',
+  'Gaia jest chwilowo niedostępna. Spróbuj ponownie.':
+    'Gaia is temporarily unavailable. Please retry.',
+  'WISE jest chwilowo niedostępny. Spróbuj ponownie lub otwórz IRSA.':
+    'WISE is temporarily unavailable. Please retry or open IRSA.',
+  'W ciągu 7 dni od klatki': 'Within 7 days of the frame',
+  'Wyszukiwanie NEOSSat…': 'Searching NEOSSat…',
+  'Znalezione produkty: {0}': 'Products found: {0}',
+  'Brak pokrycia w wybranym polu i okresie. Spróbuj wszystkich dat.':
+    'No coverage in this field and time range. Try all dates.',
+  'Pokazano 100 najnowszych produktów.': 'Showing the 100 most recent products.',
+  'Pliki i metadane CADC': 'CADC files and metadata',
+  'To wyszukiwanie pokrycia archiwum, nie potwierdzenie tego samego obiektu. Dostęp do części plików może wymagać logowania CADC.':
+    'This is an archive coverage search, not a match to the same object. Some files may require CADC sign-in.',
+  'CADC jest chwilowo niedostępne. Spróbuj ponownie.':
+    'CADC is temporarily unavailable. Please retry.',
+  'Spróbuj ponownie': 'Retry',
+  'Renderowanie WISE jest zajęte. Spróbuj ponownie.': 'WISE rendering is busy. Please retry.',
+  'Brak kafla AllWISE dla tego pola.': 'No AllWISE tile covers this field.',
+  'Metoda i źródła': 'Method and sources',
+  'Widmo jest podglądem pomiarów piksela z różnych ekspozycji i długości fal, z niepewnościami. Nie jest jednoczesnym pomiarem ani fotometrią PSF.':
+    'The spectrum previews pixel measurements from different exposures and wavelengths, with uncertainties. It is neither simultaneous nor PSF photometry.',
+  Cel: 'Target',
+  'Zmień cel': 'Change target',
+  'Współrzędne ICRS': 'ICRS coordinates',
+  'Pole widzenia': 'Field of view',
+  Blisko: 'Close-up',
+  Szeroko: 'Wide',
+  'Duże pole': 'Large field',
+  'Opcje zaawansowane': 'Advanced options',
+  'Znajdź zdjęcia': 'Find images',
+  '2 · Pasma': '2 · Bands',
+  'Przygotuj zdjęcia': 'Prepare images',
+  'Własny wybór zdjęć': 'Custom image selection',
+  'Wszystkie zdjęcia': 'All images',
+  'Dostępność klatek': 'Frame coverage',
+  'Wyszukiwanie…': 'Searching…',
+  'Znaleziono zdjęcia nowego celu. Przygotuj je, aby zastąpić obecny obraz.':
+    'Images found for a new target. Prepare them to replace the current image.',
+  Katalogi: 'Catalogs',
+  'Nowy cel — przygotuj zdjęcia, aby zaktualizować podgląd.':
+    'New target — prepare images to update the view.',
+  'Obraz nieba': 'Sky image',
+  'RGB · kolory umowne': 'RGB · false color',
+  Historia: 'History',
+  'Historia wyszukiwań': 'Search history',
+  'Wróć do poprzedniego pola i gotowych obrazów bez ponownego wyszukiwania.':
+    'Return to a previous field and prepared images without searching again.',
+  Odśwież: 'Refresh',
+  'Historia tej sesji · usuwana wraz z wygasłą sesją.':
+    'History for this session · removed when the expired session is cleaned up.',
+  'Zatrzymaj aktywne zadanie, aby przywrócić poprzednie wyszukiwanie.':
+    'Stop the active task before restoring a previous search.',
+  'Wczytywanie historii…': 'Loading history…',
+  'Jeszcze nie ma wyszukiwań': 'No searches yet',
+  'Wybierz cel i kliknij „Znajdź zdjęcia”. Wyniki pojawią się tutaj.':
+    'Choose a target and click “Find images”. Your results will appear here.',
+  Bieżące: 'Current',
+  'Wszystkie daty': 'All dates',
+  'Zdjęcia: {0}': 'Images: {0}',
+  'Gotowe klatki: {0}': 'Prepared frames: {0}',
+  'Bez gotowej sekwencji': 'No prepared sequence',
+  'Przywracanie…': 'Restoring…',
+  'Otwórz obrazy': 'Open images',
+  'Przywróć wyszukiwanie': 'Restore search',
+  'Pokaż starsze': 'Show older',
+  'Przywrócono wyszukiwanie z historii.': 'Search restored from history.',
+  'Nie udało się wczytać historii.': 'Unable to load history.',
+  'Nie udało się przywrócić wyszukiwania.': 'Unable to restore the search.',
+  'Nie udało się wyszukać zdjęć. Poprzednie wyniki zostały zachowane.':
+    'Unable to search for images. Previous results were retained.',
+  'Archiwum IRSA jest chwilowo niedostępne (HTTP {0}).':
+    'The IRSA archive is temporarily unavailable (HTTP {0}).',
+  'Spróbuj ponownie.': 'Please retry.',
+  'Poprzednie wyniki zostały zachowane. Spróbuj ponownie.':
+    'Previous results were retained. Please retry.',
+  'IRSA ograniczyło wyniki. Zmniejsz pole lub zakres dat.':
+    'IRSA truncated the results. Reduce the field or date range.',
+  'IRSA nie zwróciło poprawnych metadanych. Spróbuj ponownie.':
+    'IRSA returned invalid metadata. Please retry.',
 };

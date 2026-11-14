@@ -1,3 +1,4 @@
+import { materialize, persistSequence, sequenceInputs } from '../storage/artifacts.js';
 import { useCache } from '../maintenance/cache-usage.js';
 import { Inject, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
@@ -17,13 +18,13 @@ import {
 import { Store } from '../../database/store.js';
 import { WorkspaceService } from '../workspace/workspace.service.js';
 import { IrsaClient } from './irsa.js';
-import { TARGETS } from './targets.js';
+import { resolveTarget } from './resolve-target.js';
 
 import { cacheRoot } from './imaging/paths.js';
 import { downloadCutouts } from './imaging/download-cutouts.js';
 import { analyzeFits, renderSequence, renderVideo } from './imaging/worker-runner.js';
 export { cacheRoot } from './imaging/paths.js';
-type StoredSequence = Sequence & { createdAt: Date };
+type StoredSequence = Sequence & { createdAt: Date; searchId?: string };
 type StoredSearch = SearchResult & { createdAt: Date };
 type StoredJob = Job & { sessionId: string; active: boolean };
 
@@ -55,14 +56,8 @@ export class ObservationsService implements OnModuleInit, OnModuleDestroy {
   onModuleDestroy() {
     for (const controller of this.controllers.values()) controller.abort();
   }
-  async resolveTarget(name: string) {
-    return (
-      TARGETS.find((item) =>
-        [item.name, item.id, ...(item.aliases ?? [])].some(
-          (alias) => alias.toLowerCase() === name.trim().toLowerCase(),
-        ),
-      ) ?? null
-    );
+  async resolveTarget(name: string, signal?: AbortSignal) {
+    return resolveTarget(name, signal);
   }
   async search(sessionId: string, input: SearchInput, signal?: AbortSignal): Promise<SearchResult> {
     const observations = await this.irsa.search(input, signal);
@@ -155,6 +150,7 @@ export class ObservationsService implements OnModuleInit, OnModuleDestroy {
       id,
       sessionId,
       jobId,
+      searchId: search.id,
       status: 'queued',
       observationIds,
       frameIds: [],
@@ -277,6 +273,7 @@ export class ObservationsService implements OnModuleInit, OnModuleDestroy {
         JSON.stringify({ input, files, outputDirectory, detectors: sequence.requestedDetectors }),
       );
       const result = await renderSequence(manifest, signal);
+      await persistSequence(id);
       result.warnings = [...downloadWarnings, ...result.warnings];
       signal.throwIfAborted();
       await sequences.updateOne(
@@ -348,7 +345,7 @@ export class ObservationsService implements OnModuleInit, OnModuleDestroy {
     await mkdir(directory, { recursive: true });
     try {
       const original = JSON.parse(
-        await readFile(resolve(cacheRoot, 'sequences', sequenceId, 'request.json'), 'utf8'),
+        await readFile(await sequenceInputs(sequenceId, analysis.observationIds), 'utf8'),
       );
       if (analysis.observationIds) {
         if (!analysis.observationIds.every((id) => sequence.observationIds.includes(id)))
@@ -465,7 +462,7 @@ export class ObservationsService implements OnModuleInit, OnModuleDestroy {
         'RESOURCE_NOT_FOUND',
         'Przygotuj obrazy ponownie, aby regulować ekspozycję bez utraty szczegółów.',
       );
-    return resolve(cacheRoot, 'sequences', sequence!.id, frame.radianceName);
+    return materialize(`sequences/${sequence!.id}/${frame.radianceName}`);
   }
   async framePath(sessionId: string, id: string, frameId: string, qualityMask = true) {
     const sequence = await this.getSequence(sessionId, id);
@@ -478,7 +475,7 @@ export class ObservationsService implements OnModuleInit, OnModuleDestroy {
         'VARIANT_UNAVAILABLE',
         'Przygotuj sekwencję ponownie, aby przełączać maskę jakości.',
       );
-    return resolve(cacheRoot, 'sequences', sequence!.id, name);
+    return materialize(`sequences/${sequence!.id}/${name}`);
   }
   async saveAnnotation(sessionId: string, input: AnnotationInput, idempotencyKey: string) {
     if (!(await this.getSequence(sessionId, input.sequenceId)))

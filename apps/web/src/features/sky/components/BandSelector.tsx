@@ -1,14 +1,14 @@
+import { PopupDetails } from '../../../shared/components/PopupDetails';
 import { t } from '../../../shared/i18n/index';
-import { useRef, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import type { Observation, SequenceBand } from '@spherex/contracts';
 
 type Props = {
   availability?: ReactNode;
+  notice?: string;
   observations: Observation[];
   detectors: string[];
-  selectedIds: string[];
   result?: { requested: number; rendered: number; warnings: string[] };
-  onSelectionChange: (ids: string[]) => void;
   disabled: boolean;
   currentWavelength?: number;
   preparedBands?: SequenceBand[];
@@ -20,10 +20,9 @@ type Props = {
 
 export function BandSelector({
   availability,
+  notice,
   observations,
   detectors,
-  selectedIds,
-  onSelectionChange,
   result,
   disabled,
   currentWavelength,
@@ -33,8 +32,6 @@ export function BandSelector({
   onPrepare,
   onActivate,
 }: Props) {
-  const menu = useRef<HTMLDetailsElement>(null);
-  const photos = useRef<HTMLDetailsElement>(null);
   const bands = [1, 2, 3, 4, 5, 6].map((number) => {
     const detector = `SPHEREx-D${number}`;
     const items = observations.filter((item) => item.detector === detector);
@@ -53,7 +50,7 @@ export function BandSelector({
   });
   const available = bands.filter((band) => band.usable).map((band) => band.detector);
   const visible = observations.filter((item) => detectors.includes(item.detector ?? ''));
-  const selected = visible.filter((item) => selectedIds.includes(item.id));
+  const selected = visible;
   const valid =
     detectors.length > 0 &&
     detectors.every((detector) => {
@@ -62,108 +59,50 @@ export function BandSelector({
     });
   return (
     <section className="band-selector band-multiple panel" aria-label={t('Wybór pasm')}>
-      <span className="band-caption">{t('Pasma')}</span>
-      <details className="band-multiselect" ref={menu}>
-        <summary aria-label={t('Wybierz pasma')}>
-          {detectors.length
-            ? detectors.map((detector) => detector.replace('SPHEREx-', '')).join(', ')
-            : t('Wybierz pasma')}
-          <span aria-hidden="true">⌄</span>
-        </summary>
-        <fieldset disabled={disabled} className="band-options">
-          <legend>{t('Wybierz jedno lub kilka pasm')}</legend>
-          <div className="band-bulk">
-            <button type="button" disabled={!available.length} onClick={() => onChange(available)}>
-              {t('Wszystkie')}
-            </button>
-            <button type="button" disabled={!detectors.length} onClick={() => onChange([])}>
-              {t('Wyczyść')}
-            </button>
-          </div>
-          {bands.map((band) => (
-            <label className="band-option" key={band.detector}>
-              <input
-                type="checkbox"
-                aria-label={`Pasmo ${band.label}`}
-                checked={detectors.includes(band.detector)}
-                disabled={!band.usable}
-                onChange={(event) =>
-                  onChange(
-                    event.target.checked
-                      ? [...detectors, band.detector].sort()
-                      : detectors.filter((item) => item !== band.detector),
-                  )
-                }
-              />
-              <span>
-                <b>{band.label}</b>
-                <small>{band.range}</small>
-              </span>
-              <span className="band-count">{band.count} obs.</span>
-            </label>
-          ))}
-        </fieldset>
-      </details>
+      <span className="band-caption">{t('2 · Pasma')}</span>
+      <div className="band-chips" role="group" aria-label={t('Wybierz pasma')}>
+        <button
+          type="button"
+          disabled={disabled || !available.length}
+          aria-pressed={available.length > 0 && available.every((item) => detectors.includes(item))}
+          onClick={() => {
+            onChange(available);
+          }}
+        >
+          {t('Wszystkie')}
+        </button>
+        {bands.map((band) => (
+          <button
+            type="button"
+            key={band.detector}
+            aria-pressed={detectors.includes(band.detector)}
+            disabled={disabled || !band.usable}
+            title={`${band.range} · ${band.count} ${t('zdjęć')}`}
+            onClick={() => {
+              onChange(
+                detectors.includes(band.detector)
+                  ? detectors.filter((item) => item !== band.detector)
+                  : [...detectors, band.detector].sort(),
+              );
+            }}
+          >
+            <b>{band.label}</b>
+            <small>{band.count}</small>
+          </button>
+        ))}
+      </div>
 
       <button
         className="prepare-bands"
         disabled={disabled || !valid}
         onClick={() => {
-          if (menu.current) menu.current.open = false;
-          if (photos.current) photos.current.open = false;
           onPrepare();
         }}
       >
-        {t('Przygotuj wszystko')}
+        {t('Przygotuj zdjęcia')} <span>({selected.length})</span>
       </button>
-      <details className="band-photo-picker" ref={photos}>
-        <summary>
-          {t('Zdjęcia ')}
-          {selected.length}/{visible.length}
-        </summary>
-        <fieldset disabled={disabled}>
-          <div className="selection-actions">
-            <button
-              type="button"
-              disabled={!visible.length}
-              onClick={() => onSelectionChange(visible.map((item) => item.id))}
-            >
-              {t('Zaznacz wszystkie')}
-            </button>
-            <button type="button" onClick={() => onSelectionChange([])}>
-              {t('Odznacz wszystkie')}
-            </button>
-          </div>
-          <div className="observation-list">
-            {visible.map((item) => (
-              <label key={item.id} className="observation-row">
-                <input
-                  type="checkbox"
-                  checked={selectedIds.includes(item.id)}
-                  onChange={(event) =>
-                    onSelectionChange(
-                      event.target.checked
-                        ? [...new Set([...selectedIds, item.id])]
-                        : selectedIds.filter((id) => id !== item.id),
-                    )
-                  }
-                />
-                <span>
-                  {new Date(item.observedAtUtc).toLocaleString(t('pl-PL'), { timeZone: 'UTC' })}
-                  <small>{item.detector?.replace('SPHEREx-', '')} · UTC</small>
-                </span>
-              </label>
-            ))}
-          </div>
-          <p className="help">
-            {!detectors.length
-              ? t('Najpierw wybierz pasma.')
-              : t('Wybierz co najmniej 2 zdjęcia z różnych czasów dla każdego pasma.')}
-          </p>
-        </fieldset>
-      </details>
       {result && (
-        <details className="sequence-result">
+        <PopupDetails className="sequence-result">
           <summary title={t('Wynik ostatniego przygotowania i przyczyny pominięcia zdjęć')}>
             {t('Ostatni wynik: ')}
             {result.rendered}/{result.requested}
@@ -176,25 +115,28 @@ export function BandSelector({
                 <p key={note}>{note}</p>
               ))}
           </div>
-        </details>
+        </PopupDetails>
       )}
+      {notice && <p className="flow-next">{notice}</p>}
       {preparedBands.length > 0 && (
-        <div className="prepared-bands" role="group" aria-label={t('Gotowe pasma')}>
-          {availability ??
-            preparedBands.map((band) => (
-              <button
-                key={band.detector}
-                className={activeFrameId && band.frameIds.includes(activeFrameId) ? 'active' : ''}
-                aria-pressed={Boolean(activeFrameId && band.frameIds.includes(activeFrameId))}
-                disabled={band.status !== 'ready'}
-                title={band.error?.message ?? t('{0} klatek', band.frameIds.length)}
-                onClick={() => onActivate(band.frameIds)}
-              >
-                {band.detector.replace('SPHEREx-', '')}
-                {band.status === 'failed' ? t(' · brak zgodnej pary') : ''}
-              </button>
-            ))}
-        </div>
+        <section className="coverage-details" aria-label={t('Dostępność klatek')}>
+          <div className="prepared-bands" role="group" aria-label={t('Gotowe pasma')}>
+            {availability ??
+              preparedBands.map((band) => (
+                <button
+                  key={band.detector}
+                  className={activeFrameId && band.frameIds.includes(activeFrameId) ? 'active' : ''}
+                  aria-pressed={Boolean(activeFrameId && band.frameIds.includes(activeFrameId))}
+                  disabled={band.status !== 'ready'}
+                  title={band.error?.message ?? t('{0} klatek', band.frameIds.length)}
+                  onClick={() => onActivate(band.frameIds)}
+                >
+                  {band.detector.replace('SPHEREx-', '')}
+                  {band.status === 'failed' ? t(' · brak zgodnej pary') : ''}
+                </button>
+              ))}
+          </div>
+        </section>
       )}
       <p
         className="band-hint"

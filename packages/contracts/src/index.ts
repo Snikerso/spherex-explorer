@@ -83,3 +83,4 @@ export { rgbValues, type RgbChannel } from './composite.js';
 export { parseExplorerLink, explorerLink } from './links.js';
 export { skyDirection, earthIntersection, EARTH_RADIUS_KM, type Vector3 } from './navigation.js';
 export { gaiaSourceSchema, gaiaResultSchema, gaiaPosition, type GaiaSource, type GaiaResult, type WiseReference } from './catalogs.js';
+export type { SearchHistoryEntry, SearchHistoryPage } from './search-history.js';

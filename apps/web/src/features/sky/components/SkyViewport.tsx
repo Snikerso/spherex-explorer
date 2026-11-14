@@ -1,3 +1,5 @@
+import { GaiaOverlay } from '../../catalogs/GaiaOverlay';
+import { gaiaPosition } from '@spherex/contracts';
 import { t } from '../../../shared/i18n';
 import { FrameSources } from './FrameSources';
 import { SkyImage } from './SkyImage';
@@ -36,10 +38,10 @@ export function SkyViewport({ explorer, sky, draft, target }: SkyWorkspaceProps)
     >
       <div className="viewport-top">
         <span>
-          <i className="dot" /> OBSERVATION VIEWPORT
+          <i className="dot" /> {t('Obraz nieba')}
         </span>
         <span className={sequence ? 'online' : 'amber'}>
-          {sequence ? 'IRSA / FITS → PNG' : t('BRAK DANYCH')}
+          {sequence ? 'SPHEREx / IRSA' : t('BRAK DANYCH')}
           {currentFrame && (
             <button
               className="source-preview-toggle"
@@ -61,11 +63,7 @@ export function SkyViewport({ explorer, sky, draft, target }: SkyWorkspaceProps)
         >
           {colorActive ? (
             <div className="science-tile">
-              <div className="frame-caption">
-                {t('RGB · źródła: ')}
-                {colorSources.length}
-                {t(' · podgląd źródeł · kolory umowne')}
-              </div>
+              <div className="frame-caption">{t('RGB · kolory umowne')}</div>
               <div className="image-clip" onPointerDown={beginPan} onPointerUp={endPan}>
                 <div
                   className="image-plane"
@@ -74,6 +72,21 @@ export function SkyViewport({ explorer, sky, draft, target }: SkyWorkspaceProps)
                     transform: `translate(${view.panX * 100}%, ${view.panY * 100}%) scale(${view.zoom})`,
                   }}
                 >
+                  {sky.gaia.data && sequence.grid && currentFrame && (
+                    <GaiaOverlay
+                      sources={sky.gaia.data.sources}
+                      grid={sequence.grid}
+                      utc={currentFrame.observedAtUtc}
+                      select={(source) => {
+                        sky.setGaiaSource(source);
+                        const { raDeg, decDeg } = gaiaPosition(source, currentFrame.observedAtUtc);
+                        patch({
+                          selectedPoint: { raDeg, decDeg },
+                          playing: false,
+                        });
+                      }}
+                    />
+                  )}
                   <SkyImage
                     sequenceId={sequence.id}
                     frames={colorFrames}

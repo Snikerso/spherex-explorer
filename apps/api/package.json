@@ -1,5 +1,8 @@
 {
-  "name": "@spherex/api", "version": "0.1.0", "private": true, "type": "module",
+  "name": "@spherex/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "build": "tsc -p tsconfig.json",
@@ -7,13 +10,25 @@
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json",
     "db:init": "tsx src/scripts/init-db.ts",
     "eval:live": "tsx test/agent/live.ts",
-    "demo:scenario": "tsx test/agent/demo.ts"
+    "demo:scenario": "tsx test/agent/demo.ts",
+    "storage:migrate": "tsx src/scripts/migrate-storage.ts"
   },
   "dependencies": {
-    "@nestjs/common": "12.4.0", "@nestjs/core": "12.4.0", "@nestjs/platform-express": "12.4.0",
-    "@nestjs/mongoose": "12.0.1", "@openai/agents": "0.21.0",
-    "@spherex/contracts": "workspace:*", "dotenv": "^17.0.0", "mongoose": "9.12.0",
-    "reflect-metadata": "^0.2.2", "rxjs": "^7.8.0", "zod": "^4.6.7"
+    "@aws-sdk/client-s3": "^3.1168.0",
+    "@nestjs/common": "12.4.0",
+    "@nestjs/core": "12.4.0",
+    "@nestjs/mongoose": "12.0.1",
+    "@nestjs/platform-express": "12.4.0",
+    "@openai/agents": "0.21.0",
+    "@spherex/contracts": "workspace:*",
+    "dotenv": "^17.0.0",
+    "mongoose": "9.12.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.0",
+    "zod": "^4.6.7"
   },
-  "devDependencies": { "@types/express": "^5.0.0", "tsx": "^4.20.0" }
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "tsx": "^4.20.0"
+  }
 }

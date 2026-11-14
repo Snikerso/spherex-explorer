@@ -4,40 +4,15 @@ import { useEffect, useState } from 'react';
 function MissionPatch() {
   return (
     <svg className="mission-patch" viewBox="0 0 56 56" aria-hidden="true">
-      <circle cx="28" cy="28" r="26" fill="#123d8d" />
-      <circle cx="28" cy="28" r="25.5" fill="none" stroke="#648ac5" strokeWidth=".7" />
-      <g fill="#fff" opacity=".85">
-        <circle cx="15" cy="16" r=".8" />
-        <circle cx="39" cy="14" r=".9" />
-        <circle cx="44" cy="30" r=".7" />
-        <circle cx="13" cy="36" r=".7" />
-        <circle cx="33" cy="42" r=".7" />
-        <path d="M31 10V15M28.5 12.5H33.5" stroke="#fff" strokeWidth=".7" />
+      <rect x="3" y="3" width="50" height="50" rx="12" fill="#101c2c" stroke="#42536b" />
+      <g strokeWidth="4" strokeLinecap="round">
+        <path d="M13 34V23" stroke="#79c9ef" />
+        <path d="M19 39V18" stroke="#7ca9ed" />
+        <path d="M25 43V13" stroke="#a394e7" />
+        <path d="M31 39V17" stroke="#d191c9" />
+        <path d="M37 34V22" stroke="#e8a28c" />
+        <path d="M43 29V26" stroke="#edc880" />
       </g>
-      <ellipse
-        cx="28"
-        cy="28"
-        rx="24"
-        ry="8"
-        transform="rotate(-32 28 28)"
-        fill="none"
-        stroke="#d6e4ff"
-        strokeWidth=".7"
-        opacity=".7"
-      />
-      <path d="M7 43L48 10L33 32L36 25Z" fill="#f24b4d" />
-      <text
-        x="27.5"
-        y="33"
-        textAnchor="middle"
-        fill="white"
-        fontFamily="Arial,sans-serif"
-        fontSize="16"
-        fontWeight="900"
-        letterSpacing="-.9"
-      >
-        SPX
-      </text>
     </svg>
   );
 }
@@ -54,7 +29,7 @@ export function MissionHeader({ connected }: { connected: boolean }) {
         <MissionPatch />
         <span className="brand-wordmark">
           SPHEREx <b>EXPLORER</b>
-          <small>INFRARED OBSERVATORY / MISSION OPERATIONS</small>
+          <small>EXPLORE NASA SPHEREx OPEN DATA</small>
         </span>
       </a>
       <div className="mission">

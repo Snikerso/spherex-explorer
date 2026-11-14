@@ -1,0 +1,434 @@
+{
+  "VOTABLE": {
+    "RESOURCE_ARRAY": [
+      {
+        "INFO_ARRAY": [
+          {
+            "<xmlattr>": {
+              "name": "QUERY_STATUS",
+              "value": "OK"
+            }
+          }
+        ],
+        "TABLE": {
+          "FIELD_ARRAY": [
+            {
+              "<xmlattr>": {
+                "name": "s_ra",
+                "datatype": "double",
+                "ID": "col_0",
+                "ucd": "pos.eq.ra",
+                "unit": "deg",
+                "utype": "obscore:char.spatialaxis.coverage.location.coord.position2d.value2.c1"
+              },
+              "DESCRIPTION": "Central Spatial Position in ICRS Right ascension"
+            },
+            {
+              "<xmlattr>": {
+                "name": "s_dec",
+                "datatype": "double",
+                "ID": "col_1",
+                "ucd": "pos.eq.dec",
+                "unit": "deg",
+                "utype": "obscore:char.spatialaxis.coverage.location.coord.position2d.value2.c2"
+              },
+              "DESCRIPTION": "Central Spatial Position in ICRS Declination"
+            },
+            {
+              "<xmlattr>": {
+                "name": "dataproduct_type",
+                "datatype": "char",
+                "arraysize": "*",
+                "ID": "col_6",
+                "ucd": "meta.id",
+                "utype": "obscore:obsdataset.dataproducttype"
+              },
+              "DESCRIPTION": "Data product (file content) primary type"
+            },
+            {
+              "<xmlattr>": {
+                "name": "dataproduct_subtype",
+                "datatype": "char",
+                "arraysize": "*",
+                "ID": "col_4",
+                "ucd": "meta.code",
+                "utype": "caom2:artifact.producttype"
+              },
+              "DESCRIPTION": "Product type (e.g. science, calibration, auxiliary, preview, info)"
+            },
+            {
+              "<xmlattr>": {
+                "name": "energy_bandpassname",
+                "datatype": "char",
+                "arraysize": "*",
+                "ID": "col_7",
+                "utype": "caom2:Energy.bandpassName"
+              },
+              "DESCRIPTION": "Collection-specific name for energy band (e.g. filter name)"
+            },
+            {
+              "<xmlattr>": {
+                "name": "obs_collection",
+                "datatype": "char",
+                "arraysize": "*",
+                "ID": "col_20",
+                "ucd": "meta.id",
+                "utype": "obscore:dataid.collection"
+              },
+              "DESCRIPTION": "Data collection this observation belongs to"
+            },
+            {
+              "<xmlattr>": {
+                "name": "access_url",
+                "datatype": "char",
+                "arraysize": "*",
+                "ID": "col_15",
+                "ucd": "meta.ref.url",
+                "utype": "obscore:access.reference"
+              },
+              "DESCRIPTION": "URI for the physical artifact"
+            },
+            {
+              "<xmlattr>": {
+                "name": "t_min",
+                "datatype": "double",
+                "ID": "col_39",
+                "irsa_format": "12.6f",
+                "precision": "F6",
+                "ucd": "time.start;obs.exposure",
+                "unit": "d",
+                "utype": "obscore:char.timeaxis.coverage.bounds.limits.starttime"
+              },
+              "DESCRIPTION": "Lower bound on time axis (Modified Julian Day)"
+            },
+            {
+              "<xmlattr>": {
+                "name": "t_max",
+                "datatype": "double",
+                "ID": "col_40",
+                "irsa_format": "12.6f",
+                "precision": "F6",
+                "ucd": "time.end;obs.exposure",
+                "unit": "d",
+                "utype": "obscore:char.timeaxis.coverage.bounds.limits.stoptime"
+              },
+              "DESCRIPTION": "Upper bound on time axis (Modified Julian Day)"
+            }
+          ],
+          "DATA": {
+            "TABLEDATA": [
+              [
+                "268.86057",
+                "4.5433329999999996",
+                "image",
+                "auxiliary",
+                "W2",
+                "wise_allwise",
+                "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/26/2688/2688p045_ac51/2688p045_ac51-art-w2-P.tbl",
+                "55273.549798",
+                "55458.481485"
+              ],
+              [
+                "268.86057",
+                "4.5433329999999996",
+                "image",
+                "noise",
+                "W2",
+                "wise_allwise",
+                "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/26/2688/2688p045_ac51/2688p045_ac51-w2-unc-3.fits.gz",
+                "55273.549798",
+                "55458.481485"
+              ],
+              [
+                "268.86057",
+                "4.5433329999999996",
+                "image",
+                "science",
+                "W2",
+                "wise_allwise",
+                "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/26/2688/2688p045_ac51/2688p045_ac51-w2-int-3.fits",
+                "55273.549798",
+                "55458.481485"
+              ],
+              [
+                "268.86057",
+                "4.5433329999999996",
+                "image",
+                "auxiliary",
+                "W2",
+                "wise_allwise",
+                "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/26/2688/2688p045_ac51/2688p045_ac51-art-w2-O.tbl",
+                "55273.549798",
+                "55458.481485"
+              ],
+              [
+                "268.86057",
+                "4.5433329999999996",
+                "image",
+                "auxiliary",
+                "W2",
+                "wise_allwise",
+                "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/26/2688/2688p045_ac51/2688p045_ac51-mfflag-3.tbl",
+                "55273.549798",
+                "55458.481485"
+              ],
+              [
+                "268.86057",
+                "4.5433329999999996",
+                "image",
+                "weight",
+                "W2",
+                "wise_allwise",
+                "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/26/2688/2688p045_ac51/2688p045_ac51-w2-cov-3.fits.gz",
+                "55273.549798",
+                "55458.481485"
+              ],
+              [
+                "268.86057",
+                "4.5433329999999996",
+                "image",
+                "auxiliary",
+                "W2",
+                "wise_allwise",
+                "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/26/2688/2688p045_ac51/2688p045_ac51-art-w2-D.tbl",
+                "55273.549798",
+                "55458.481485"
+              ],
+              [
+                "268.86057",
+                "4.5433329999999996",
+                "image",
+                "auxiliary",
+                "W2",
+                "wise_allwise",
+                "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/26/2688/2688p045_ac51/2688p045_ac51-art-w2-H.tbl",
+                "55273.549798",
+                "55458.481485"
+              ],
+              [
+                "268.86057",
+                "4.5433329999999996",
+                "image",
+                "auxiliary",
+                "W1",
+                "wise_allwise",
+                "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/26/2688/2688p045_ac51/2688p045_ac51-art-w1-D.tbl",
+                "55273.549798",
+                "55458.481485"
+              ],
+              [
+                "268.86057",
+                "4.5433329999999996",
+                "image",
+                "auxiliary",
+                "W1",
+                "wise_allwise",
+                "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/26/2688/2688p045_ac51/2688p045_ac51-mfflag-3.tbl",
+                "55273.549798",
+                "55458.481485"
+              ],
+              [
+                "268.86057",
+                "4.5433329999999996",
+                "image",
+                "auxiliary",
+                "W1",
+                "wise_allwise",
+                "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/26/2688/2688p045_ac51/2688p045_ac51-art-w1-O.tbl",
+                "55273.549798",
+                "55458.481485"
+              ],
+              [
+                "268.86057",
+                "4.5433329999999996",
+                "image",
+                "auxiliary",
+                "W1",
+                "wise_allwise",
+                "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/26/2688/2688p045_ac51/2688p045_ac51-art-w1-P.tbl",
+                "55273.549798",
+                "55458.481485"
+              ],
+              [
+                "268.86057",
+                "4.5433329999999996",
+                "image",
+                "science",
+                "W1",
+                "wise_allwise",
+                "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/26/2688/2688p045_ac51/2688p045_ac51-w1-int-3.fits",
+                "55273.549798",
+                "55458.481485"
+              ],
+              [
+                "268.86057",
+                "4.5433329999999996",
+                "image",
+                "weight",
+                "W1",
+                "wise_allwise",
+                "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/26/2688/2688p045_ac51/2688p045_ac51-w1-cov-3.fits.gz",
+                "55273.549798",
+                "55458.481485"
+              ],
+              [
+                "268.86057",
+                "4.5433329999999996",
+                "image",
+                "noise",
+                "W1",
+                "wise_allwise",
+                "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/26/2688/2688p045_ac51/2688p045_ac51-w1-unc-3.fits.gz",
+                "55273.549798",
+                "55458.481485"
+              ],
+              [
+                "268.86057",
+                "4.5433329999999996",
+                "image",
+                "auxiliary",
+                "W1",
+                "wise_allwise",
+                "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/26/2688/2688p045_ac51/2688p045_ac51-art-w1-H.tbl",
+                "55273.549798",
+                "55458.481485"
+              ],
+              [
+                "268.86057",
+                "4.5433329999999996",
+                "image",
+                "noise",
+                "W4",
+                "wise_allwise",
+                "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/26/2688/2688p045_ac51/2688p045_ac51-w4-unc-3.fits.gz",
+                "55273.549798",
+                "55276.262731"
+              ],
+              [
+                "268.86057",
+                "4.5433329999999996",
+                "image",
+                "weight",
+                "W4",
+                "wise_allwise",
+                "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/26/2688/2688p045_ac51/2688p045_ac51-w4-cov-3.fits.gz",
+                "55273.549798",
+                "55276.262731"
+              ],
+              [
+                "268.86057",
+                "4.5433329999999996",
+                "image",
+                "auxiliary",
+                "W4",
+                "wise_allwise",
+                "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/26/2688/2688p045_ac51/2688p045_ac51-mfflag-3.tbl",
+                "55273.549798",
+                "55276.262731"
+              ],
+              [
+                "268.86057",
+                "4.5433329999999996",
+                "image",
+                "science",
+                "W4",
+                "wise_allwise",
+                "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/26/2688/2688p045_ac51/2688p045_ac51-w4-int-3.fits",
+                "55273.549798",
+                "55276.262731"
+              ],
+              [
+                "268.86057",
+                "4.5433329999999996",
+                "image",
+                "auxiliary",
+                "W3",
+                "wise_allwise",
+                "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/26/2688/2688p045_ac51/2688p045_ac51-art-w3-P.tbl",
+                "55273.549798",
+                "55276.262731"
+              ],
+              [
+                "268.86057",
+                "4.5433329999999996",
+                "image",
+                "auxiliary",
+                "W3",
+                "wise_allwise",
+                "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/26/2688/2688p045_ac51/2688p045_ac51-art-w3-D.tbl",
+                "55273.549798",
+                "55276.262731"
+              ],
+              [
+                "268.86057",
+                "4.5433329999999996",
+                "image",
+                "weight",
+                "W3",
+                "wise_allwise",
+                "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/26/2688/2688p045_ac51/2688p045_ac51-w3-cov-3.fits.gz",
+                "55273.549798",
+                "55276.262731"
+              ],
+              [
+                "268.86057",
+                "4.5433329999999996",
+                "image",
+                "auxiliary",
+                "W3",
+                "wise_allwise",
+                "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/26/2688/2688p045_ac51/2688p045_ac51-mfflag-3.tbl",
+                "55273.549798",
+                "55276.262731"
+              ],
+              [
+                "268.86057",
+                "4.5433329999999996",
+                "image",
+                "science",
+                "W3",
+                "wise_allwise",
+                "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/26/2688/2688p045_ac51/2688p045_ac51-w3-int-3.fits",
+                "55273.549798",
+                "55276.262731"
+              ],
+              [
+                "268.86057",
+                "4.5433329999999996",
+                "image",
+                "auxiliary",
+                "W3",
+                "wise_allwise",
+                "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/26/2688/2688p045_ac51/2688p045_ac51-art-w3-H.tbl",
+                "55273.549798",
+                "55276.262731"
+              ],
+              [
+                "268.86057",
+                "4.5433329999999996",
+                "image",
+                "auxiliary",
+                "W3",
+                "wise_allwise",
+                "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/26/2688/2688p045_ac51/2688p045_ac51-art-w3-O.tbl",
+                "55273.549798",
+                "55276.262731"
+              ],
+              [
+                "268.86057",
+                "4.5433329999999996",
+                "image",
+                "noise",
+                "W3",
+                "wise_allwise",
+                "https://irsa.ipac.caltech.edu/ibe/data/wise/allwise/p3am_cdd/26/2688/2688p045_ac51/2688p045_ac51-w3-unc-3.fits.gz",
+                "55273.549798",
+                "55276.262731"
+              ]
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,5 +1,6 @@
+import { useModalDialog } from '../../../shared/hooks/useModalDialog';
 import { t } from '../../../shared/i18n/index';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { RenderFrame, RgbChannel } from '@spherex/contracts';
 import { SkyImage } from './SkyImage';
@@ -21,11 +22,8 @@ export function SourceComparison({
   snapshot: SourceComparisonSnapshot;
   onClose: () => void;
 }) {
-  const dialog = useRef<HTMLDialogElement>(null);
+  const dialog = useModalDialog();
   const [zoom, setZoom] = useState(1);
-  useEffect(() => {
-    dialog.current?.showModal();
-  }, []);
   const { source, frames, color, channels, exposure, sequenceId, size } = snapshot;
   return createPortal(
     <dialog
@@ -33,9 +31,6 @@ export function SourceComparison({
       ref={dialog}
       aria-labelledby="source-comparison-title"
       onClose={onClose}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) dialog.current?.close();
-      }}
     >
       <header>
         <div>
