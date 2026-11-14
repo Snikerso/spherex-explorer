@@ -2,7 +2,7 @@
 
 - Team: Optymalista
 - App: `spherex-explorer`, ID `9770a672-6907-488a-89d3-112c8373e850`
-- Source: `Snikerso/spherex-explorer`, branch `main` (`app-platform-release` is kept in sync as a release reference)
+- Source: `Snikerso/spherex-explorer`, branch `app-platform-release`
 - Region: Frankfurt (`fra`)
 - One instance, `apps-s-1vcpu-2gb`; do not scale horizontally with the current local queue/cache.
 - Nginx exposes port 8080; `/api/` proxies to NestJS on loopback port 3000.

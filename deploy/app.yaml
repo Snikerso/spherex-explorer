@@ -4,7 +4,7 @@ services:
   - name: explorer
     github:
       repo: Snikerso/spherex-explorer
-      branch: main
+      branch: app-platform-release
       deploy_on_push: true
     dockerfile_path: Dockerfile
     source_dir: /
