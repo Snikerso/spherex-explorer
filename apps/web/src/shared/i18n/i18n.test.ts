@@ -29,3 +29,19 @@ it('translates unavailable band labels and frame counts without Polish suffixes'
   expect(t('Brak w okresie')).toBe('Brak w okresie');
   expect(t('{0} klatek', 24)).toBe('24 klatek');
 });
+
+it('translates stored preparation warnings with detector and observation identifiers', () => {
+  expect(t('SPHEREx-D2: Pominięto abc123: Środek obszaru jest poza tą obserwacją.')).toBe(
+    'SPHEREx-D2: Skipped abc123: The field center is outside this observation.',
+  );
+  expect(
+    t(
+      'SPHEREx-D1: Podgląd wizualny: odjęty model ZODI, wspólny kontrast asinh, bez dopasowania PSF i bez fotometrii.',
+    ),
+  ).toContain('Visual preview: ZODI');
+  expect(
+    t(
+      'SPHEREx-D3: Filtrowanie długości fali wyłączone. Animacja pokazuje wszystkie dostępne obserwacje; różnice jasności i wyglądu mogą wynikać z różnych długości fali.',
+    ),
+  ).toContain('Wavelength filtering is off.');
+});

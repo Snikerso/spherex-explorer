@@ -49,3 +49,20 @@ it('uses the selected time window without chaining beyond its maximum span', () 
   expect(observationTimeline(rows, 72)).toHaveLength(1);
   expect(grouped.reduce((n, g) => n + [...g.bands.values()].flat().length, 0)).toBe(rows.length);
 });
+
+it('expands a time window into separate physical columns without losing exact alignment', async () => {
+  const { observationGridColumns } = await import('./observation-timeline');
+  const cols = observationGridColumns(
+    [
+      image('a', 'D1', '2025-01-01T00:00:00Z'),
+      image('b', 'D2', '2025-01-01T00:00:00Z'),
+      image('c', 'D1', '2025-01-01T01:00:00Z'),
+    ],
+    24,
+  );
+  expect(cols).toHaveLength(2);
+  expect(cols[0]!.bands.get('D1')![0]!.id).toBe('a');
+  expect(cols[0]!.bands.get('D2')![0]!.id).toBe('b');
+  expect(cols[1]!.bands.has('D2')).toBe(false);
+  expect(cols.every((c) => c.groupIndex === 0)).toBe(true);
+});

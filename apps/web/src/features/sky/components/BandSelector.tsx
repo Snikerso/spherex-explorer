@@ -38,7 +38,6 @@ export function BandSelector({
   onPrepare,
   onActivate,
 }: Props) {
-  const [imageBand, setImageBand] = useState<string | null>(null);
   const [percent, setPercent] = useState(100);
   const [overrides, setOverrides] = useState<Record<string, boolean>>({});
   const visible = observations.filter((item) => detectors.includes(item.detector ?? ''));
@@ -66,7 +65,6 @@ export function BandSelector({
     };
   });
   const available = bands.filter((band) => band.usable).map((band) => band.detector);
-  const activeImageBand = imageBand && detectors.includes(imageBand) ? imageBand : null;
   const selected = visible.filter((item) => isSelected(item.id));
   const valid =
     selected.length <= MAX_SELECTED_OBSERVATIONS &&
@@ -177,46 +175,28 @@ export function BandSelector({
             {t('Edytuj pojedyncze zdjęcia')} · {selected.length}/{visible.length}
             {Object.keys(overrides).length ? ` · ${t('Wybór ręczny')}` : ''}
           </summary>
-          <nav className="image-band-tabs" aria-label={t('Filtr zdjęć według pasma')}>
-            <button
-              type="button"
-              aria-pressed={activeImageBand === null}
-              onClick={() => setImageBand(null)}
-            >
-              {t('Wszystkie')}{' '}
-              <small>
-                {selected.length}/{visible.length}
-              </small>
-            </button>
-            {bands
-              .filter((band) => detectors.includes(band.detector))
-              .map((band) => (
-                <button
-                  type="button"
-                  key={band.detector}
-                  aria-pressed={activeImageBand === band.detector}
-                  onClick={() => setImageBand(band.detector)}
-                >
-                  {band.label}{' '}
-                  <small>
-                    {selected.filter((item) => item.detector === band.detector).length}/{band.count}
-                  </small>
-                </button>
-              ))}
-          </nav>
           <ObservationSelectionGrid
             epochHours={epochHours}
             observations={visible}
-            detectors={
-              activeImageBand
-                ? [activeImageBand]
-                : bands
-                    .filter((band) => detectors.includes(band.detector))
-                    .map((band) => band.detector)
-            }
+            detectors={bands
+              .filter((band) => detectors.includes(band.detector))
+              .map((band) => band.detector)}
             isSelected={isSelected}
             disabled={disabled}
             selectionFull={selected.length >= MAX_SELECTED_OBSERVATIONS}
+            remaining={Math.max(0, MAX_SELECTED_OBSERVATIONS - selected.length)}
+            onToggleColumn={(ids, checked) => {
+              if (
+                checked &&
+                selected.length + ids.filter((id) => !isSelected(id)).length >
+                  MAX_SELECTED_OBSERVATIONS
+              )
+                return;
+              setOverrides((previous) => ({
+                ...previous,
+                ...Object.fromEntries(ids.map((id) => [id, checked])),
+              }));
+            }}
             onToggle={(id) => {
               if (!isSelected(id) && selected.length >= MAX_SELECTED_OBSERVATIONS) return;
               setOverrides((previous) => ({ ...previous, [id]: !isSelected(id) }));
@@ -240,7 +220,7 @@ export function BandSelector({
             {result.warnings
               .filter((note) => !note.includes('Maska '))
               .map((note) => (
-                <p key={note}>{note}</p>
+                <p key={note}>{t(note)}</p>
               ))}
           </div>
         </PopupDetails>

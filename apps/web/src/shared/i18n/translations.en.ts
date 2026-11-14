@@ -1,4 +1,18 @@
 export const english: Record<string, string> = {
+  'Do {0}': 'To {0}',
+  'Od {0}': 'From {0}',
+  'Okno {0}': 'Window {0}',
+  'Zdjęcia są pogrupowane według Time window: {0} godz. Górny kwadracik zaznacza całą pionową kolumnę.':
+    'Images are grouped by Time window: {0} hours. The top square toggles the entire vertical column.',
+  '{0}: Pominięto {1}: Środek obszaru jest poza tą obserwacją.':
+    '{0}: Skipped {1}: The field center is outside this observation.',
+  '{0}: Podgląd wizualny: odjęty model ZODI, wspólny kontrast asinh, bez dopasowania PSF i bez fotometrii.':
+    '{0}: Visual preview: ZODI model subtracted, shared asinh contrast, without PSF matching or photometry.',
+  '{0}: Filtrowanie długości fali wyłączone. Animacja pokazuje wszystkie dostępne obserwacje; różnice jasności i wyglądu mogą wynikać z różnych długości fali.':
+    '{0}: Wavelength filtering is off. The animation shows all available observations; brightness and appearance may vary across wavelengths.',
+  'Ta kolumna przekracza limit 64 zdjęć. Najpierw odznacz inne zdjęcia.':
+    'This column exceeds the 64-image limit. Deselect other images first.',
+  'Kolumna {0}': 'Column {0}',
   'Limit: maksymalnie 64 zdjęcia łącznie ze wszystkich pasm.':
     'Limit: 64 images total across all bands.',
   'Możesz wybrać maksymalnie 64 zdjęcia łącznie.': 'You can select up to 64 images in total.',

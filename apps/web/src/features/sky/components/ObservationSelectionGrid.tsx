@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Observation } from '@spherex/contracts';
 import { t } from '../../../shared/i18n';
-import { observationTimeline } from '../observation-timeline';
+import { observationGridColumns } from '../observation-timeline';
 
 type Props = {
   observations: Observation[];
@@ -9,6 +9,8 @@ type Props = {
   detectors: string[];
   isSelected: (id: string) => boolean;
   onToggle: (id: string) => void;
+  onToggleColumn: (ids: string[], selected: boolean) => void;
+  remaining: number;
   disabled: boolean;
   selectionFull?: boolean;
 };
@@ -19,11 +21,13 @@ export function ObservationSelectionGrid({
   detectors,
   isSelected,
   onToggle,
+  onToggleColumn,
+  remaining,
   disabled,
   selectionFull = false,
 }: Props) {
   const columns = useMemo(
-    () => observationTimeline(observations, epochHours),
+    () => observationGridColumns(observations, epochHours),
     [observations, epochHours],
   );
   const scroller = useRef<HTMLDivElement>(null);
@@ -64,7 +68,7 @@ export function ObservationSelectionGrid({
       </div>
       <p className="selection-grid-help">
         {t(
-          'Wspólna oś UTC: kolumna obejmuje okres do {0} godz. zgodnie z Time window. Kliknij zdjęcie, aby zmienić wybór.',
+          'Zdjęcia są pogrupowane według Time window: {0} godz. Górny kwadracik zaznacza całą pionową kolumnę.',
           epochHours,
         )}
       </p>
@@ -74,29 +78,91 @@ export function ObservationSelectionGrid({
           aria-label={t('Dostępność ekspozycji przed przygotowaniem')}
         >
           <thead>
+            <tr className="selection-window-row">
+              <th>UTC</th>
+              {[...new Set(columns.map((column) => column.groupIndex))].map((group) => {
+                const items = columns.filter((column) => column.groupIndex === group);
+                return (
+                  <th
+                    key={group}
+                    colSpan={items.length}
+                    scope="colgroup"
+                    className="selection-window-heading"
+                    title={`${date(items[0]!.utc)} – ${date(items.at(-1)!.endUtc)}`}
+                  >
+                    <div className="selection-window-label">
+                      <strong>{t('Okno {0}', group + 1)}</strong>
+                      <span>{t('Od {0}', date(items[0]!.utc).slice(0, 16))}</span>
+                      <span>
+                        {t(
+                          'Do {0}',
+                          date(
+                            new Date(
+                              Date.parse(items[0]!.utc) + epochHours * 3600000,
+                            ).toISOString(),
+                          ).slice(0, 16),
+                        )}{' '}
+                        UTC
+                      </span>
+                    </div>
+                  </th>
+                );
+              })}
+            </tr>
             <tr>
               <th scope="col">UTC</th>
-              {columns.map((column, index) => (
-                <th
-                  scope="col"
-                  key={column.utc}
-                  title={`${date(column.utc)} – ${date(column.endUtc)}`}
-                  aria-label={`${date(column.utc)} – ${date(column.endUtc)}`}
-                >
-                  {index === 0 || index % 10 === 0 ? index + 1 : ''}
-                </th>
-              ))}
+              {columns.map((column, index) => {
+                const ids = detectors.flatMap((detector) =>
+                  (column.bands.get(detector) ?? []).map((item) => item.id),
+                );
+                const selectedCount = ids.filter(isSelected).length;
+                const full = ids.length > 0 && selectedCount === ids.length;
+                const blocked = !full && ids.length - selectedCount > remaining;
+                const caption = `${t('Kolumna {0}', index + 1)} · ${date(column.utc)} – ${date(column.endUtc)} · ${selectedCount}/${ids.length}`;
+                return (
+                  <th
+                    scope="col"
+                    key={column.key}
+                    data-window-start={
+                      index === 0 || columns[index - 1]!.groupIndex !== column.groupIndex
+                    }
+                  >
+                    <button
+                      className="selection-column-toggle"
+                      type="button"
+                      aria-label={caption}
+                      title={
+                        blocked
+                          ? t(
+                              'Ta kolumna przekracza limit 64 zdjęć. Najpierw odznacz inne zdjęcia.',
+                            )
+                          : caption
+                      }
+                      aria-pressed={full ? true : selectedCount ? 'mixed' : false}
+                      disabled={disabled || !ids.length || blocked}
+                      onClick={() => onToggleColumn(ids, !full)}
+                    >
+                      <span aria-hidden="true">{full ? '✓' : selectedCount ? '−' : ''}</span>
+                    </button>
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
             {detectors.map((detector) => (
               <tr key={detector}>
                 <th scope="row">{detector.replace('SPHEREx-', '')}</th>
-                {columns.map((column) => {
+                {columns.map((column, index) => {
                   const images = column.bands.get(detector) ?? [];
                   const missing = `${detector.replace('SPHEREx-', '')} · ${date(column.utc)} – ${date(column.endUtc)} · ${t('Brak ekspozycji')}`;
                   return (
-                    <td key={column.utc}>
+                    <td
+                      key={column.key}
+                      data-window-start={
+                        index === 0 || columns[index - 1]!.groupIndex !== column.groupIndex
+                      }
+                    >
                       <div className="selection-grid-cells">
                         {images.length ? (
                           images.map((item) => {

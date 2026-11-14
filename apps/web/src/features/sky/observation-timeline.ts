@@ -34,3 +34,24 @@ export function observationTimeline(observations: Observation[], windowHours = 0
   }
   return groups;
 }
+
+/** One physical square column per exact exposure time inside each time-window group. */
+export function observationGridColumns(observations: Observation[], windowHours: number) {
+  return observationTimeline(observations, windowHours).flatMap((group, groupIndex) => {
+    const exact = observationTimeline([...group.bands.values()].flat());
+    return exact.flatMap((column) => {
+      const slots = Math.max(...[...column.bands.values()].map((images) => images.length));
+      return Array.from({ length: slots }, (_, slot) => ({
+        utc: column.utc,
+        endUtc: column.endUtc,
+        groupIndex,
+        key: `${column.utc}:${slot}`,
+        bands: new Map(
+          [...column.bands].flatMap(([detector, images]) =>
+            images[slot] ? [[detector, [images[slot]!]] as const] : [],
+          ),
+        ),
+      }));
+    });
+  });
+}
