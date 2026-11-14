@@ -75,7 +75,7 @@ export async function analyzeFits(manifest: string): Promise<unknown> {
   }
 }
 export async function renderVideo(manifest: string): Promise<void> {
-  const { code } = await runWorker('export_video.py' | 'reference.py', manifest, {
+  const { code } = await runWorker('export_video.py', manifest, {
     timeoutMs: 180000,
     maxOutputBytes: 0,
     captureOutput: false,
@@ -87,12 +87,20 @@ export async function renderVideo(manifest: string): Promise<void> {
     );
 }
 
-export async function renderReference(manifest: string): Promise<{ image: string; timeStart: string | null; timeEnd: string | null }> {
-  const { output, code } = await runWorker('reference.py', manifest, { timeoutMs: 60000, maxOutputBytes: 4 * 1024 * 1024 });
+export async function renderReference(
+  manifest: string,
+): Promise<{ image: string; timeStart: string | null; timeEnd: string | null }> {
+  const { output, code } = await runWorker('reference.py', manifest, {
+    timeoutMs: 60000,
+    maxOutputBytes: 4 * 1024 * 1024,
+  });
   try {
     if (code !== 0) throw new Error();
     const result = JSON.parse(output);
-    if (typeof result.image !== 'string' || !result.image.startsWith('data:image/png;base64,')) throw new Error();
+    if (typeof result.image !== 'string' || !result.image.startsWith('data:image/png;base64,'))
+      throw new Error();
     return result;
-  } catch { throw new DomainError('IMAGING_ERROR', 'Unable to render the WISE reference image.'); }
+  } catch {
+    throw new DomainError('IMAGING_ERROR', 'Unable to render the WISE reference image.');
+  }
 }
