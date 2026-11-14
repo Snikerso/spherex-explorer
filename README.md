@@ -1,135 +1,150 @@
-# SPHEREx Explorer — dokumentacja projektu
+# SPHEREx Explorer
 
-Aplikacja webowa do porównywania obserwacji nieba w czasie, przygotowywana pod [NASA Space Apps 2026: Planet X and SPHEREx](https://www.spaceappschallenge.org/2026/challenges/planet-x-and-spherex/).
+Explore NASA's infrared sky observations across time and wavelength.
 
-Użytkownik wybiera obszar nieba współrzędnymi lub poleceniem tekstowym. Agent wyszukuje obserwacje SPHEREx, przygotowuje sekwencję obrazów i steruje jej odtwarzaniem. Użytkownik może obejrzeć zmiany, zaznaczyć interesujące miejsce i udostępnić widok.
+I developed SPHEREx Explorer as a solo participant for [NASA Space Apps 2026: Planet X and SPHEREx](https://www.spaceappschallenge.org/2026/challenges/planet-x-and-spherex/). The application brings archive search, image preparation, visual comparison, and a natural-language copilot into one workspace.
 
-**Wymagany stos:** React + NestJS + MongoDB + OpenAI Agents SDK dla TypeScript. Integracja bazy przez Mongoose. Dokumentacja po polsku; proponowany interfejs PL/EN. Nazwa robocza: SPHEREx Explorer.
+**[Open the application](https://spherex-explorer-l9m4r.ondigitalocean.app/)** · **[Project guide](docs/submission/03-project-guide-en.md)** · **[Submission checklist](docs/submission/00-checklista-pl.md)**
 
-**Baza aplikacji: MongoDB Atlas Free**, tworzona przez użytkownika. Lokalny MongoDB w Dockerze jest wariantem opcjonalnym.
+## Features
 
-## Działający zakres
+- Search real SPHEREx Level 2 observations from NASA/IPAC IRSA by RA/Dec, field of view, release, and dates; start with five challenge example targets.
+- Prepare FITS cutouts on a common TAN sky grid and inspect blink playback or synchronized A/B views.
+- Explore detector/time availability, false-color RGB, exposure adjustment, and monochrome/RGB MP4 exports.
+- Inspect point samples across wavelengths, detector stacks, stack RGB compositions, and epoch addition/subtraction.
+- Use a text copilot through the OpenAI Agents SDK; its operations share the manual controls and revisioned session state.
+- Inspect observation sources, dates, wavelengths, quality flags, and selected sky coordinates; save session notes.
+- Explore orbital context in a 3D navigation view, including separately labelled archival detector pointing.
+- Switch between English and Polish without resetting the workspace.
+- Use Gaia DR3 overlays, AllWISE reference comparisons, and CADC/NEOSSat coverage queries in the current source tree.
 
-- React: wyszukiwanie pięciu celów i dowolnego pola RA/Dec, wybór obserwacji, odtwarzanie Blink oraz porównanie A/B ze wspólnym zoomem i przesunięciem.
-- NestJS + MongoDB: prywatne sesje, zapis widoku z rewizją, wyniki wyszukiwania, zadania obrazowe, sekwencje i notatki.
-- Rzeczywiste produkty IRSA SIA2, wydania DR1/QR3. Puste wyniki nie są zastępowane obrazami demonstracyjnymi.
-- Worker Python: wycinki FITS, WCS TAN, kontrola WCS-WAVE i masek, odjęcie ZODI, wspólny kontrast asinh i PNG. Podgląd służy porównaniu wizualnemu, bez dopasowania PSF i bez fotometrii.
-- Copilot OpenAI Agents SDK: streaming SSE, historia SDK w MongoDB, anulowanie i te same operacje co ręczne kontrolki. Klucz jest dostępny wyłącznie backendowi.
-- Kliknięcie obrazu wyznacza RA/Dec; notatki zapisują się w sesji. Link do współrzędnych nie udostępnia obrazów ani czatu.
+Features in the working tree may be newer than the public deployment. The [integration report](docs/12-integracja-live.md) describes processing behavior and historical verification; [deployment notes](deploy/README.md) record the deployment baseline.
 
-Publiczne snapshoty, przełącznik PL/EN, wdrożenie HTTPS, wygaszanie cache i rozproszona kolejka pozostają poza obecnym zakresem. Lokalna kolejka wymaga **jednego procesu API**. Restart oznacza jawny błąd niezakończonych zadań; gotowe obrazy i ustawienia pozostają zapisane.
+## Scientific scope
 
-## Uruchomienie
+This is an exploratory tool. A search around a target does not establish that the target is detected. Playback may combine wavelengths and coverage, so apparent changes can reflect spectral differences or processing artifacts. RGB colors are assigned for visualization. Point samples are surface brightness, not aperture/PSF photometry. Stacks can mix dates and wavelengths; difference images have no PSF matching or calibrated detection significance. The application does not establish a Planet X discovery or automatically confirm moving sources.
 
-Wymagania: Node 22.12+ z gałęzi 22 lub Node 24, pnpm 11.25.0, Python 3.11–3.13 i uv. MongoDB musi działać jako replica set (Atlas lub lokalnie).
+Coordinate links reopen a search context; they do not publish private images or chat. Public session snapshots and a distributed job queue are not implemented. The local preparation queue requires **one API process**. Interrupted unfinished jobs fail explicitly after restart.
+
+## Run locally
+
+Requirements: Node 22.12+ from the 22 series or Node 24, pnpm 11.25.0, Python 3.11–3.13, uv, and MongoDB running as a replica set (Atlas or local).
 
 ```bash
 pnpm install --frozen-lockfile
 uv sync --project workers/imaging --locked
-cp .env.example .env # tylko przy pierwszej konfiguracji; zachowaj własny .env
-pnpm db:up          # opcjonalny lokalny MongoDB
+cp .env.example .env # first setup only; preserve an existing .env
+pnpm db:up          # optional local MongoDB; requires Docker
 ```
 
-Ustaw `MONGODB_URI` (Atlas lub lokalny URI podany w `.env.example`) i `APP_ORIGIN=http://127.0.0.1:5173`. Aby użyć copilota, ustaw na backendzie `OPENAI_API_KEY`, `OPENAI_MODEL=gpt-6.1-sol` i opcjonalnie `OPENAI_REASONING_EFFORT=low`.
+Set `MONGODB_URI` and `APP_ORIGIN=http://127.0.0.1:5173` in `.env`. For the optional copilot, set backend-only `OPENAI_API_KEY`, `OPENAI_MODEL`, and optionally `OPENAI_REASONING_EFFORT`. The repository's configured model is `gpt-6.1-sol`; use a compatible model available to your account.
 
 ```bash
 pnpm db:init
 pnpm dev
 ```
 
-W środowisku użytkownika sekrety są w Doppler `sphere_x / dev`:
+Open [the local frontend](http://127.0.0.1:5173). Check [API/database readiness](http://127.0.0.1:3000/api/v1/health/ready). Manual search and images work without an OpenAI key; chat reports missing configuration.
+
+For the maintainer's existing Doppler environment:
 
 ```bash
 doppler run --project sphere_x --config dev -- pnpm db:init
 doppler run --project sphere_x --config dev -- pnpm dev
 ```
 
-Frontend: http://127.0.0.1:5173. Gotowość API: http://127.0.0.1:3000/api/v1/health/ready. Bez klucza OpenAI wyszukiwanie i obrazy działają, a czat pokazuje brak konfiguracji.
+A first investigation: select WISE 0855 → DR1 → Search → choose observations → prepare a sequence → Blink → Play. FITS downloads may take minutes. Inspect frame dates and wavelengths before interpreting differences. The current pipeline retains usable observations across wavelengths rather than restricting playback to a matched spectral subset.
 
-Przykład: wybierz WISE 0855 → DR1 → Szukaj → detektor SPHEREx-D1 → Wybierz do 24 → Przygotuj sekwencję → Blink → Odtwórz. Pobranie FITS może trwać kilka minut; postęp i anulowanie są dostępne w kokpicie. Nie każda para tego samego detektora przechodzi kontrolę długości fali. Worker wybiera zgodny podzbiór i opisuje wykluczenia.
+## Checks
 
 ```bash
-pnpm check             # lint, typy, testy offline, build
-pnpm test:integration  # tymczasowy MongoDB replica set; nie korzysta z Atlas/IRSA/OpenAI
-pnpm demo:scenario     # jawny skrypt narzędzi na danych syntetycznych
-pnpm eval:live         # płatny test modelu; dane obserwacyjne w tym runnerze są syntetyczne
+pnpm check             # lint, types, offline tests, build
+pnpm test:integration  # temporary MongoDB replica set; no Atlas/IRSA/OpenAI
+pnpm test:imaging      # Python worker tests
+pnpm format:check     # frontend and observation-module formatting
+pnpm demo:scenario    # scripted tool workflow using synthetic data
+pnpm eval:live        # paid model evaluation with synthetic observations
+pnpm verify:live -- --images # real archive check; requires the API running
 ```
 
-Szczegóły endpointów: [API](docs/04-api-i-model-danych.md). Stan wdrożenia i weryfikacja: [raport integracji](docs/12-integracja-live.md).
+The scripted scenario does not test language understanding. Model evaluation does not verify IRSA. Historical results are dated in the documentation; translating it does not imply a fresh test run.
 
-## Dokumenty
+## Documentation
 
-| Dokument | Zawartość |
+The documentation is in English. Existing filenames are retained to preserve repository links.
+
+| Document | Contents |
 | --- | --- |
-| [01 — Zakres i wymagania](docs/01-zakres.md) | Cel, scenariusze, MVP, rozszerzenia, kryteria odbioru |
-| [02 — Architektura i dane](docs/02-architektura-i-dane.md) | Moduły, repozytorium, IRSA, obrazy FITS, porównywanie obserwacji |
-| [03 — Agent tekstowy](docs/03-agent.md) | Rola, narzędzia, pamięć, sterowanie UI, ograniczenia |
-| [04 — API i model danych](docs/04-api-i-model-danych.md) | Endpointy, zdarzenia SSE, typy, własność sesji |
-| [05 — Lista zadań](docs/05-backlog.md) | Kolejność wdrożenia, checklisty, zależności i rezultaty |
-| [06 — Testy, uruchomienie i demo](docs/06-testy-i-wdrozenie.md) | Plan weryfikacji, konfiguracja, wdrożenie, scenariusz prezentacji |
-| [07 — Źródła i decyzje](docs/07-zrodla-i-decyzje.md) | Zweryfikowane źródła, założenia, otwarte kwestie |
-| [08 — Interfejs kokpitu](docs/08-interfejs-kokpit.md) | Układ ze szkicu, styl nowoczesnego myśliwca, kontrolki i responsywność |
-| [09 — Scenariusze i testy agenta](docs/09-scenariusze-i-testy-agenta.md) | Przypadki użycia, testy offline, ewaluacja live i ograniczenia |
-| [10 — Plan demonstracji](docs/10-plan-demonstracji.md) | Przebieg 3 minut, przygotowanie, plan awaryjny i materiały |
-| [11 — Uruchomienie i Atlas](docs/11-uruchomienie-i-atlas.md) | Konfiguracja MongoDB Atlas Free, komendy i działające endpointy |
+| [01 — Scope and requirements](docs/01-zakres.md) | Audience, challenge, acceptance criteria, future work |
+| [02 — Architecture and data](docs/02-architektura-i-dane.md) | Components, archive access, imaging, jobs and cache |
+| [03 — Text copilot](docs/03-agent.md) | Tools, shared controls, history, streaming and limits |
+| [04 — API and data model](docs/04-api-i-model-danych.md) | Routes, ownership, SSE, collections and conflicts |
+| [05 — Backlog](docs/05-backlog.md) | Original delivery milestones and outstanding acceptance work |
+| [06 — Verification and deployment](docs/06-testy-i-wdrozenie.md) | Test strategy, configuration, release criteria |
+| [07 — Sources and decisions](docs/07-zrodla-i-decyzje.md) | References, choices, risks and attribution |
+| [08 — Interface](docs/08-interfejs-kokpit.md) | Cockpit layout, interaction and accessibility |
+| [09 — Agent scenarios](docs/09-scenariusze-i-testy-agenta.md) | Offline tests, model evaluation and historical results |
+| [10 — Demonstration plan](docs/10-plan-demonstracji.md) | Submission demo and optional extended walkthrough |
+| [11 — Setup and Atlas](docs/11-uruchomienie-i-atlas.md) | Environment, MongoDB, startup and REST example |
+| [12 — Integration report](docs/12-integracja-live.md) | Implementation changes, evidence and scientific limits |
+| [Deployment](deploy/README.md) | Hosting baseline and release configuration |
 
-## Kolejność budowy
-
-1. Potwierdzić pobieranie rzeczywistych obserwacji i przygotować dwie porównywalne klatki.
-2. Zbudować wyszukiwarkę oraz odtwarzacz w React.
-3. Udostępnić te same operacje agentowi przez narzędzia w NestJS.
-4. Dodać zapis, udostępnianie, obsługę błędów i demonstrację.
-
-Dokumenty 01–08 opisują docelowy system. Aktualnie dostępny zakres i działające komendy opisano powyżej oraz w dokumencie 11. Checklisty backlogu wymagają ukończenia całych kryteriów, a nie samego istnienia szkieletu.
-
-Stan źródeł: **7 listopada 2026**. Wymagania wyzwania pochodzą z oficjalnej strony; szczegóły implementacji są propozycją projektową.
-
-## Organizacja kodu
-
-Frontend jest podzielony według funkcji aplikacji:
+## Code organization
 
 ```text
 apps/web/src/
-  App.tsx                    # układ i połączenie modułów
-  app/components/            # nagłówek, zakładki, status operacji, stopka
+  App.tsx                 # layout and feature integration
+  app/components/         # header, tabs, operation status, footer
   features/
-    explorer/                # sesja, synchronizacja API i zdarzenia agenta
-    navigation/              # formularz, kontroler orbity, odczyt orientacji FITS
-      model/                 # obliczenia pozycji, oświetlenia i efemeryd
-      scene/                 # renderer 3D oraz fabryki Ziemi i satelity
-    sky/
-      components/            # siatka pasm, viewport, RGB, oś czasu i źródła
-      hooks/                 # odtwarzanie, kompozycja, interakcje, eksport
-    instruments/             # telemetria, jakość danych i notatki
-    analysis/                # widma, stacki i porównania epok
-    copilot/                 # czat, fokus i prezentacja wiadomości
-  shared/
-    api/                     # klient HTTP i wspólne typy odpowiedzi
-    i18n/                    # język, katalog tłumaczeń i testy
-    lib/                     # wspólne formatowanie
-  styles/                    # baza, układ, motyw misji i panel instrumentów
+    explorer/             # session, API synchronization, agent events
+    navigation/           # search, orbital model, 3D scene, FITS pointing
+    sky/                  # viewport, band grid, playback, RGB and exports
+    instruments/          # metadata, quality and notes
+    analysis/             # point samples, stacks, epoch comparison
+    catalogs/             # Gaia, WISE and CADC reference tools
+    copilot/              # conversation and message display
+  shared/                 # API client, i18n and formatting
+  styles/                 # base, layout and cockpit theme
+apps/api/src/modules/     # domain services, ownership and integrations
+packages/contracts/       # shared Zod schemas and TypeScript types
+workers/imaging/          # Python FITS processing and tests
+config/                   # archive release catalogue
 ```
 
-Stan nieba pozostaje w hookach wywoływanych przez `App`, więc przełączanie zakładek nie resetuje ustawień RGB ani odtwarzania. Komponenty prezentacyjne otrzymują jawne propsy; obliczenia orbitalne i zarządzanie zasobami GPU są oddzielone od Reacta. Testy frontendowe znajdują się przy testowanym module.
+Sky state lives in hooks above the tab content, preserving playback/RGB settings when switching tabs. Orbital calculations and GPU-resource management are separate from React. Frontend tests live beside their modules. The API imaging directory contains cutout download, cache paths, and worker invocation; `ObservationsService` owns session checks, job orchestration, and result persistence. Keep base → layout → theme → instrument style ordering.
 
-`apps/api/src/modules/observations/imaging/` zawiera pobieranie wycinków, ścieżki cache i wspólny mechanizm uruchamiania workerów. `ObservationsService` odpowiada za sesję, własność zasobów, kolejkę i zapis wyników. Limity rozmiaru, timeouty, retry i anulowanie są zachowane.
+## Cache and persistence
 
-`pnpm format:web` formatuje frontend. `pnpm format:check` sprawdza format frontendu i modułów obserwacji API. Pozostałe polecenia weryfikacji (`pnpm check`, `pnpm test:integration`, `pnpm test:imaging`) pozostają bez zmian. Style są importowane w kolejności: baza → układ → motyw → instrumenty; zachowaj tę kolejność przy dalszych zmianach.
+Cleanup runs at startup and hourly (`CLEANUP_INTERVAL_MS`, minimum one minute). Sessions expire after seven inactive days, with an additional 24-hour cleanup buffer. Active jobs/runs defer session deletion. Session records are removed last so partial cleanup can be retried.
 
-### Automatyczne sprzątanie
+Managed local cleanup covers `sequences`, `fits`, `analyses`, and `exports` under `CACHE_ROOT`. It removes orphaned sequences and unreferenced FITS/temporary files older than `CACHE_RETENTION_HOURS` (default/minimum 24). Referenced FITS and retained sequences are preserved. Symlinks are not followed. Missing/corrupt manifests prevent deletion of shared FITS. Cleanup does not overlap downloads, analysis, or exports in the API process. Scheduled cleanup is disabled in tests.
 
-API uruchamia sprzątanie przy starcie i co godzinę (`CLEANUP_INTERVAL_MS`, minimum minuta).
-Sesje wygasają po 7 dniach bez aktywności; po dodatkowych 24 godzinach bufora API usuwa
-sesję i powiązane widoki, wyszukiwania, sekwencje, zadania, notatki oraz historię copilota.
-Aktywne zadania i uruchomienia agenta wstrzymują usuwanie swojej sesji. Rekord sesji jest
-usuwany na końcu, aby błąd częściowego sprzątania można było ponowić.
+The current source supports private S3-compatible DigitalOcean Spaces for durable FITS, PNG, radiance arrays, and sequence manifests. Configure `SPACES_BUCKET`, `SPACES_REGION`, `SPACES_ACCESS_KEY_ID`, and `SPACES_SECRET_ACCESS_KEY`; default prefix: `spherex/v1/`. With no storage configuration, files remain local. Partial configuration prevents startup.
 
-Sprzątanie dysku obejmuje wyłącznie zarządzane katalogi `sequences`, `fits`, `analyses`
-i `exports` wewnątrz `CACHE_ROOT`. Usuwa osierocone sekwencje oraz nieużywane FITS i
-pozostałości plików tymczasowych starsze niż `CACHE_RETENTION_HOURS` (domyślnie 24,
-minimum 24). Zachowuje sekwencje obecne w bazie i FITS wskazane przez manifesty gotowych
-sekwencji. Nie podąża za dowiązaniami symbolicznymi. Brak lub uszkodzenie manifestu
-zachowanej gotowej sekwencji wstrzymuje usuwanie współdzielonych FITS. Sprzątanie cache
-nie działa równolegle z pobieraniem, analizą lub eksportem w procesie API. Mechanizm
-zakłada jeden proces API zarządzający lokalnym cache, tak jak kolejka przygotowywania.
-W środowisku testowym harmonogram jest wyłączony; sprzątanie można wywołać jawnie.
+FITS keys hash the complete cutout URL, including region. Reads check local cache, then object storage, then IRSA. Concurrent same-file requests share a download within one API process. Sequence assets are stored before readiness is committed and restored locally on demand after restart. Access remains through the ownership-checked API; buckets are private. MP4 exports remain temporary. Storage errors are surfaced, not treated as missing files.
+
+Object cleanup preserves FITS referenced by ready sequences; unused FITS retention is controlled by `SPACES_FITS_RETENTION_DAYS` (default 90). Incomplete manifests stop shared-FITS cleanup. Migrate an existing cache with the repeatable command:
+
+```bash
+doppler run --project sphere_x --config dev -- pnpm --filter @spherex/api storage:migrate
+```
+
+Existing objects are skipped. Configuring storage does not itself release code to the public application. See deployment notes for environment mapping.
+
+## Reference data
+
+**Gaia DR3:** up to 300 bright sources from ESA TAP, with a search margin for proper motion and maximum radius 0.5°. Markers use the sequence TAN grid and tangential propagation to frame time. Missing motion components retain catalogue positions; observer parallax and radial velocity are not included. A marker selects a point and pauses playback. The copilot's `lookup_gaia` uses a 72″ radius at catalogue epoch. Catalogue proximity is not confirmed identification.
+
+**AllWISE W1/W2:** IRSA SIA2 selects scientific intensity tiles (`science`, `*-int-3.fits`); the nearest tile center is preferred. IBE cutouts are reprojected to the sequence grid with independent asinh contrast. Gzip is detected regardless of URL suffix, with a 32 MiB decompressed limit. Tile edges can limit coverage. Dates come from FITS or SIA2 `t_min`/`t_max`; unknown periods are labelled. No cross-mission subtraction or photometry is claimed.
+
+**CADC/NEOSSat:** public ObsCore/TAP coverage metadata, maximum radius 0.5°, default ±7 days around the frame, or all dates. Up to 100 recent products include dates and DataLink references. Empty results mean no matching coverage; they do not establish absence of an object. No automatic cross-mission identification or NEOSSat reduction is performed.
+
+Catalogue results are not stored in MongoDB. Gaia cache is bounded to 32 queries for ten minutes; WISE temporary cutouts are removed after rendering. Reference rendering is serialized per API process and checks sequence ownership.
+
+## Data credits, AI use and authorship
+
+NASA SPHEREx observations are provided through [NASA/IPAC IRSA](https://irsa.ipac.caltech.edu/Missions/spherex.html). Additional references include [Gaia DR3](https://gea.esac.esa.int/archive/documentation/GDR3/), [AllWISE](https://irsa.ipac.caltech.edu/ibe/docs/wise/allwise/p3am_cdd/), [CADC TAP](https://www4.cadc.hia.nrc.gc.ca/en/doc/tap/), [CelesTrak](https://celestrak.org/), and [Natural Earth](https://www.naturalearthdata.com/). See [sources and attribution](docs/07-zrodla-i-decyzje.md) for release-specific credit requirements.
+
+The project was developed by a solo participant. OpenAI models power the optional copilot; OpenAI Codex assisted with development, debugging, and documentation. Astronomical observations are archive data, not generated images. The original UI concept mockup was AI-generated and is labelled as a design reference. The submission package tracks remaining media disclosures and credits. This is an independent challenge entry; it does not imply NASA endorsement.
+
+No project code license has been selected in this repository. Third-party data and dependencies retain their respective terms.

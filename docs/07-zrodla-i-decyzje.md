@@ -1,58 +1,71 @@
-# Źródła, założenia i decyzje
+# Sources, assumptions and decisions
 
-Zweryfikowano 7 listopada 2026. Źródła opisują wymagania i dostępne mechanizmy; nie stanowią dowodu, że integracja aplikacji została już zaimplementowana lub że wybrany obiekt ma odpowiednie obserwacje.
+The original research baseline was checked on 7 November 2026; implementation notes were updated on 14 November. External references describe APIs and requirements, not proof that a feature or target detection has been verified. No fresh external-source audit is implied by this English documentation update.
 
-## Źródła
+## References
 
-| Źródło | Zastosowanie |
+| Source | Use |
 | --- | --- |
-| [Oficjalne wyzwanie Planet X and SPHEREx](https://www.spaceappschallenge.org/2026/challenges/planet-x-and-spherex/) | Cele, obiekty testowe, kierunki rozszerzeń |
-| [HackAthlone — kopia opisu wyzwania](https://hackathlone.com/challenges/planet-x-and-spherex) | Pomocnicze porównanie treści; pierwszeństwo ma strona oficjalna |
-| [IRSA SPHEREx](https://irsa.ipac.caltech.edu/Missions/spherex.html) | Aktualne wydania i narzędzia |
-| [IRSA Archive Data Access](https://caltech-ipac.github.io/spherex-archive-documentation/spherex-data-access/) | SIA2, kolekcje, dostęp do plików |
-| [IRSA Cutout Tool](https://irsa.ipac.caltech.edu/data/SPHEREx/docs/cutout_tool.html) | Wycinki FITS i zachowanie metadanych |
-| [IRSA Data Explorer Overview](https://irsa.ipac.caltech.edu/onlinehelp/spherex/spherex/overview.html) | Sposób gromadzenia danych i detektory; datowane informacje o wydaniach sprawdzać na stronie głównej IRSA |
-| [IRSA Quick Release Overview](https://irsa.ipac.caltech.edu/data/SPHEREx/docs/overview_qr.html) | DOI, informacje o wydaniach i atrybucja |
-| [OpenAI Docs — Agents SDK quickstart](https://developers.openai.com/api/docs/guides/agents/quickstart) | SDK TypeScript i function tools |
-| [OpenAI Docs — Running agents](https://developers.openai.com/api/docs/guides/agents/running-agents) | Historia, uruchamianie i streaming |
-| [OpenAI Docs — Integrations and observability](https://developers.openai.com/api/docs/guides/agents/integrations-observability) | Tracing i diagnostyka |
-| [Vite](https://vite.dev/guide/) | Konfiguracja projektu frontendowego |
-| [NestJS: MongoDB](https://docs.nestjs.com/techniques/mongodb) | Integracja Mongoose przez `@nestjs/mongoose` |
-| [MongoDB: atomowość i transakcje](https://www.mongodb.com/docs/manual/core/write-operations-atomicity/) | Aktualizacje dokumentów, współbieżność i replica set |
-| [MongoDB: limity](https://www.mongodb.com/docs/manual/reference/limits/) | Limit dokumentu BSON i podział historii na dokumenty |
-| [MongoDB Atlas Free](https://www.mongodb.com/docs/atlas/reference/free-shared-limitations/) | Limity darmowego klastra i zarządzana replikacja |
-| [Astropy WCS](https://docs.astropy.org/en/stable/wcs/) i [reproject](https://docs.astropy.org/projects/reproject/en/stable/) | Transformacje i wyrównywanie obrazów |
+| [Official Planet X and SPHEREx challenge](https://www.spaceappschallenge.org/2026/challenges/planet-x-and-spherex/) | Goals, example targets and optional extensions |
+| [HackAthlone challenge copy](https://hackathlone.com/challenges/planet-x-and-spherex) | Historical comparison when the official page failed; official text takes precedence |
+| [IRSA SPHEREx](https://irsa.ipac.caltech.edu/Missions/spherex.html) | Mission archive and release access |
+| [SPHEREx archive access](https://caltech-ipac.github.io/spherex-archive-documentation/spherex-data-access/) | SIA2, collections and products |
+| [IRSA cutouts](https://irsa.ipac.caltech.edu/data/SPHEREx/docs/cutout_tool.html) | FITS region retrieval and metadata |
+| [Data Explorer overview](https://irsa.ipac.caltech.edu/onlinehelp/spherex/spherex/overview.html) | Observations, detectors and wavelength coverage |
+| [Quick Release overview](https://irsa.ipac.caltech.edu/data/SPHEREx/docs/overview_qr.html) | QR release DOI and acknowledgement; verify DR1 credits separately |
+| [SPHEREx products](https://irsa.ipac.caltech.edu/onlinehelp/spherex/spherex/sp.html) | FITS products and flags |
+| [OpenAI Agents SDK](https://openai.github.io/openai-agents-js/) | Agent definitions, tools, running and tracing |
+| [Vite](https://vite.dev/guide/) | Frontend development/build |
+| [NestJS MongoDB](https://docs.nestjs.com/techniques/mongodb) | Mongoose integration |
+| [MongoDB atomicity](https://www.mongodb.com/docs/manual/core/write-operations-atomicity/) | Revision updates and transactions |
+| [MongoDB limits](https://www.mongodb.com/docs/manual/reference/limits/) | BSON/document design |
+| [Atlas Free limits](https://www.mongodb.com/docs/atlas/reference/free-shared-limitations/) | Provider-managed replication and plan limits |
+| [Astropy WCS](https://docs.astropy.org/en/stable/wcs/) / [reproject](https://reproject.readthedocs.io/) | Sky-coordinate transformations and alignment |
+| [Gaia DR3](https://gea.esac.esa.int/archive/documentation/GDR3/) | Catalogue positions, motion and measurements |
+| [AllWISE IBE](https://irsa.ipac.caltech.edu/ibe/docs/wise/allwise/p3am_cdd/) | Reference intensity images |
+| [CADC TAP](https://www4.cadc.hia.nrc.gc.ca/en/doc/tap/) | NEOSSat coverage metadata |
+| [CelesTrak](https://celestrak.org/NORAD/elements/gp.php?CATNR=63182&FORMAT=TLE) | SPHEREx orbital elements |
+| [Natural Earth](https://www.naturalearthdata.com/) | Geographic outlines for the globe |
+| [Astronomy Engine](https://github.com/cosinekitty/astronomy) | Astronomical calculations |
+| [Submission guide](https://www.spaceappschallenge.org/resources/project-submission-guide/) | Form, language, SI disclosure and demo rules |
 
-Oficjalna strona wyzwania zwracała błąd w przeglądarce źródeł. Treść odczytano bezpośrednio z HTML, z osadzonego payloadu strony, i porównano z kopią lokalnego wydarzenia. Nie stwierdzono konieczności zmiany zakresu na podstawie kopii.
+During original research, the official challenge failed in the source browser; its HTML payload was read directly and compared with the local-event copy. The copy did not change the scope.
 
-## Status decyzji
+## Decisions
 
-| Decyzja | Status i uzasadnienie |
+| Decision | Status |
 | --- | --- |
-| React + NestJS + MongoDB + tekstowy agent OpenAI Agents SDK | Wymaganie użytkownika |
-| MongoDB Atlas na darmowym planie Free | Wybór użytkownika; klaster tworzy użytkownik, URI pozostaje w lokalnym `.env` |
-| Interfejs nowoczesnego kokpitu inspirowanego X-wingiem, według szkicu użytkownika | Wymaganie użytkownika; układ i kontrolki opisuje [projekt UI](08-interfejs-kokpit.md) |
-| Jeden agent TypeScript w backendzie | Propozycja bazowa: wspólny język z NestJS i bez dodatkowej orkiestracji |
-| Publiczna wyszukiwarka obrazów i sekwencja czasowa | Wymaganie wyzwania |
-| Mongoose (`@nestjs/mongoose`), monorepo pnpm, Vite | Propozycja do zastosowania przy starcie implementacji |
-| Replica set zarządzany przez Atlas; lokalny MongoDB opcjonalny | Decyzja projektowa: krótkie transakcje, indeksy i odtwarzalne środowisko testowe |
-| Proces pomocniczy Python do FITS/WCS | Propozycja wymagająca potwierdzenia w D03; publiczny backend pozostaje NestJS |
-| QR3 jako startowa kolekcja | Propozycja oparta na stanie IRSA; dostępność i pokrycie sprawdzić w D01/D02 |
-| Brak logowania kontem w MVP | Propozycja: anonimowe, odseparowane sesje z własnością zasobów |
-| Model, hosting aplikacji, budżet | Otwarte, do zapisania w D04; baza wybrana jako Atlas Free |
-| Tolerancja długości fali, WCS i jakości | Otwarte parametry naukowe; ustalić na próbce danych przed odbiorem pipeline |
+| React, NestJS, MongoDB, TypeScript Agents SDK | Author-selected stack |
+| MongoDB Atlas Free; local replica set optional | Selected database approach; credentials stay private |
+| Cockpit-inspired interface based on the author's sketch | Selected direction; decoration must not hide data or imply official mission control |
+| One backend agent using the same services as manual controls | Implemented architecture |
+| Python for FITS/WCS | Implemented numerical worker |
+| Mongoose, pnpm monorepo, Vite, shared Zod contracts | Implemented foundation |
+| DR1/QR3 release catalogue | Current configuration; no automatic mixing of releases |
+| Anonymous isolated sessions | Implemented; no account system required for the viewer |
+| One API instance/local preparation queue | Current operational constraint |
+| Optional private S3-compatible persistence | Current-source capability; deployment must map configuration explicitly |
+| Public immutable snapshots and distributed jobs | Planned |
+| Quantitative scientific thresholds, complete licensing and final release credits | Require explicit validation/decisions |
 
-## Ryzyka wpływające na plan
+The original plan preferred a spectrally matched sequence. Current playback intentionally retains differing wavelengths and explains the consequence; this expands visual exploration without establishing time variability.
 
-| Ryzyko | Działanie |
+## Risks and response
+
+| Risk | Response |
 | --- | --- |
-| Za mało porównywalnych obserwacji | Najpierw D01–D03; sprawdzony zestaw demonstracyjny i jawny brak danych |
-| Obrót, inne pasmo lub kalibracja udają zmianę | Wspólna siatka i selekcja; różnicowanie dopiero po kontroli PSF/tła |
-| Duże FITS i opóźnienia archiwum | Cutouts, cache, limity i asynchroniczne przygotowanie |
-| Model błędnie interpretuje polecenie | Schematy narzędzi, wspólne serwisy, ewaluacje i aktualny stan widoku |
-| Przeciążenie lub koszty publicznego czatu | Limity per sesja, globalny budżet i ograniczona liczba kroków |
-| Zmiana SDK lub archiwum | Przypięte wersje, testy kontraktów, smoke test przed prezentacją |
+| Too few useful observations | Verify a real example first; show empty results honestly |
+| Rotation, wavelength, calibration, PSF or background mimics change | Common geometry and visible metadata; calibrated comparisons need additional validation |
+| Large FITS and archive latency | Cutouts, bounded concurrency, caching, cancellation and timeouts |
+| Model misinterprets a request | Strict tools, shared services, evaluations and fresh state |
+| Public model costs | Rate/concurrency limits and usage measurement; validate budget enforcement separately |
+| SDK/archive changes | Lockfiles, contract fixtures and explicit external smoke tests |
+| Ephemeral hosting | Private object persistence and restart recovery; one process until queue redesign |
 
-## Atrybucja i materiały końcowe
+## Attribution, authorship and AI
 
-W aplikacji umieścić sekcję „Dane i źródła”, identyfikatory użytych produktów, link do IRSA oraz DOI właściwego wydania. Oficjalne brzmienie podziękowania skopiować przy implementacji z [IRSA Quick Release Overview](https://irsa.ipac.caltech.edu/data/SPHEREx/docs/overview_qr.html), sprawdzając aktualne wymagania. Wybór licencji własnego kodu i potwierdzenie zasad użycia dodatkowych katalogów pozostają zadaniami wdrożeniowymi.
+Include source product IDs, dates, release and DOI in the final demo's manifest. Copy required release-specific acknowledgements from the applicable archive release documentation; do not assume Quick Release wording covers DR1. Third-party catalogue/software/image licenses remain applicable even when resources are freely accessible.
+
+The author participated as a solo developer. OpenAI Codex assisted with development, debugging and documentation; OpenAI models power the optional copilot. The conceptual cockpit mockup was generated with imagegen from the author's sketch. It is a design illustration, not observational evidence. Final SI-assisted media need the disclosures/labels required by the submission guide. Archive images processed numerically are not synthetic astronomical observations.
+
+A complete asset audit and project code-license choice remain open. Public repository access alone does not grant a code license. Do not use a NASA-like badge as project branding; the current source replaces it with an original six-band icon and a descriptive open-data tagline.

@@ -1,110 +1,103 @@
-# Uruchomienie szkieletu i MongoDB Atlas Free
+# Local setup and MongoDB Atlas
 
-## Co działa w tym etapie
+## Requirements and available workflow
 
-- Monorepo pnpm: React/Vite, NestJS, wspólne kontrakty Zod/TypeScript i lockfile.
-- Ekran startowy z motywem kokpitu oraz rzeczywistym sprawdzeniem gotowości API i bazy.
-- Anonimowa sesja w cookie, odczyt/zapis jej stanu w MongoDB i kontrola rewizji.
-- Fabryka agenta SDK, siedem narzędzi oraz testowe adaptery obserwacji.
-- Testy offline, integracja z tymczasowym MongoDB, runner ewaluacji live i konfiguracja CI.
+The current source includes React/Vite, NestJS, shared contracts, anonymous sessions, revisioned state, real IRSA observations, Python imaging, notes and HTTP/SSE copilot history. It is beyond the original scaffold stage. Consult the [integration report](12-integracja-live.md) for feature limitations and the [deployment notes](../deploy/README.md) for the public hosting baseline.
 
-To szkielet developerski. Nie ma jeszcze połączenia z IRSA, obrazów FITS, pełnego interfejsu kokpitu, czatu HTTP/SSE, trwałej historii SDK, limitów publicznego czatu ani kompletnego API z dokumentu 04. Nie publikować go jako ukończonego serwisu; domyślnie oba serwery nasłuchują lokalnie.
+Use Node 22.12+ from the 22 series or Node 24, pnpm 11.25.0, Python 3.11–3.13 and uv. `.nvmrc`, package manifests and lockfiles define the project toolchain. MongoDB must support transactions as a replica set. Atlas is the primary managed option; Docker is only needed for the optional local database.
 
-## Wymagania
+## Configure Atlas
 
-Node 22.12+ z gałęzi 22 lub Node 24; pnpm 11.25.0. `.nvmrc` wskazuje wersję startową, a lockfile przypina zależności. Konfiguracja pnpm jawnie zezwala na build esbuild; pobieranie binarki testowego MongoDB odbywa się dopiero przy testach integracyjnych.
+1. Create a cluster and an application database user with `readWrite` scoped to `spherex`.
+2. Permit the backend's source address through Atlas Network Access.
+3. Copy the Drivers URI, supply user/password and `/spherex`, and percent-encode special credential characters.
+4. Store it only in backend environment configuration as `MONGODB_URI`. React never connects directly to Atlas.
 
-## MongoDB Atlas — główny wariant
-
-Użytkownik tworzy własny klaster **Free** w Atlas. Nie potrzebujemy Dockera dla bazy aplikacji.
-
-1. Utworzyć klaster Free i użytkownika bazy z rolą `readWrite` ograniczoną do bazy `spherex`.
-2. W Network Access dopuścić adres IP komputera uruchamiającego backend. Przy późniejszym hostingu dopuścić adres wyjściowy backendu.
-3. W Connect → Drivers skopiować URI aplikacji. Uzupełnić użytkownika, hasło i nazwę bazy `/spherex`. Znaki specjalne w loginie/haśle zakodować procentowo zgodnie z formatem URI.
-4. Wkleić URI wyłącznie do lokalnego `.env` jako `MONGODB_URI`. Klienta React nie łączymy bezpośrednio z Atlas.
-
-Przykładowy format z celowo fikcyjnymi wartościami:
+Illustrative values only:
 
 ```dotenv
 MONGODB_URI=mongodb+srv://APP_USER:ENCODED_PASSWORD@YOUR_CLUSTER.mongodb.net/spherex?retryWrites=true&w=majority
 ```
 
-Do URI Atlas nie dopisywać lokalnego `directConnection=true` ani nazwy lokalnego replica set. Zachować parametry dostarczone przez Atlas. Nie wklejać URI z hasłem do czatu, kodu ani repozytorium.
+Do not add local `directConnection=true` or `replicaSet=rs0` to Atlas URLs. Preserve the provider's connection parameters. Never commit/share a URI containing credentials. Atlas manages replication; see [current plan limitations](https://www.mongodb.com/docs/atlas/reference/free-shared-limitations/) rather than relying on a fixed historical allowance. Store metadata/state in MongoDB and image assets outside it; the API limits its connection pool.
 
-Atlas Free ma obecnie limit 0,5 GB obejmujący dokumenty i indeksy oraz automatycznie zarządzaną replikację. Dlatego zapisujemy tam metadane i stan; FITS i podglądy pozostają poza bazą. API ogranicza pulę do 10 połączeń. Limity planu mogą się zmieniać. [Oficjalne limity Atlas Free](https://www.mongodb.com/docs/atlas/reference/free-shared-limitations/).
+## First startup
 
-## Pierwsze uruchomienie
-
-W katalogu głównym:
+From the repository root:
 
 ```bash
 pnpm install --frozen-lockfile
-cp .env.example .env
+uv sync --project workers/imaging --locked
+cp .env.example .env # first setup only
 ```
 
-Uzupełnić `MONGODB_URI` w `.env`, następnie:
+Set `MONGODB_URI` and `APP_ORIGIN=http://127.0.0.1:5173`. For chat, also set server-only `OPENAI_API_KEY`, `OPENAI_MODEL`, and optional `OPENAI_REASONING_EFFORT`. Manual search/imaging and offline tests need no OpenAI key.
 
 ```bash
 pnpm db:init
 pnpm dev
 ```
 
-- Frontend: `http://localhost:5173`.
-- Gotowość API i bazy: `http://127.0.0.1:3000/api/v1/health/ready`.
-- Żywotność API: `http://127.0.0.1:3000/api/v1/health/live`.
+- [Frontend](http://127.0.0.1:5173)
+- [API/database readiness](http://127.0.0.1:3000/api/v1/health/ready)
+- [Process liveness](http://127.0.0.1:3000/api/v1/health/live)
 
-Skrypt `db:init` tworzy wymagane indeksy `sessions` i `views`; można wykonać go ponownie. Nie usuwa kolekcji ani indeksów. Następne etapy dodadzą własne wersjonowane skrypty dla kolejnych kolekcji.
+Initialization creates required indexes and is repeatable; it is not a database wipe. Vite proxies `/api` to the backend, keeping browser requests same-origin. `APP_ORIGIN` must exactly match the opened frontend origin: `localhost` and `127.0.0.1` are different origins. If `API_PORT` changes, update the Vite proxy target as well.
 
-Frontend używa proxy Vite `/api`, więc żądania przeglądarki trafiają do jednego origin. Domyślne `APP_ORIGIN=http://localhost:5173` musi odpowiadać adresowi otwartemu w przeglądarce. `API_PORT` jest konfigurowalny, ale przy jego zmianie trzeba też zmienić cel proxy w `apps/web/vite.config.ts`.
+For the existing maintainer environment:
 
-Klucz OpenAI nie jest potrzebny do uruchomienia tego ekranu, zapisu ustawień i testów offline. `OPENAI_API_KEY` i `OPENAI_MODEL` ustawiamy dopiero do jawnego `eval:live`.
+```bash
+doppler run --project sphere_x --config dev -- pnpm db:init
+doppler run --project sphere_x --config dev -- pnpm dev
+```
 
-## Sprawdzenie zapisu stanu przez REST
+## REST state example
 
-Poniższy przykład nie wymaga gotowego czatu ani kontrolek. Cookie zostaje w lokalnym pliku tymczasowym; usuwamy je po próbie.
+The cookie stays in a temporary local file. Use the same origin configured above:
 
 ```bash
 curl -c /tmp/spherex-cookies.txt -X POST \
-  -H 'Origin: http://localhost:5173' \
+  -H 'Origin: http://127.0.0.1:5173' \
   http://127.0.0.1:3000/api/v1/sessions
 
 curl -b /tmp/spherex-cookies.txt \
   http://127.0.0.1:3000/api/v1/view
 
 curl -b /tmp/spherex-cookies.txt -X PATCH \
-  -H 'Origin: http://localhost:5173' -H 'Content-Type: application/json' \
+  -H 'Origin: http://127.0.0.1:5173' -H 'Content-Type: application/json' \
   -d '{"expectedRevision":0,"patch":{"fps":1}}' \
   http://127.0.0.1:3000/api/v1/view
 
 rm /tmp/spherex-cookies.txt
 ```
 
-Nowa sesja zaczyna od rewizji 0. Kolejny zapis używa rewizji zwróconej przez API; stara rewizja daje `409 VIEW_CONFLICT`. Parametry są walidowane, a sesja wynika z cookie, nie z identyfikatora przysłanego w body.
+A new session starts at revision zero. Subsequent writes use the revision returned by the API; a stale revision produces `409 VIEW_CONFLICT`. Identity comes from the cookie, not a session ID in the request body.
 
-## Opcjonalny MongoDB lokalny
+## Optional local MongoDB
 
-Jeżeli Atlas nie jest dostępny, można świadomie wybrać lokalny replica set. Wymaga uruchomionego silnika Docker.
+With Docker running:
 
 ```bash
 pnpm db:up
 ```
 
-W `.env` wtedy:
+Use the local URI:
 
 ```dotenv
 MONGODB_URI=mongodb://127.0.0.1:27017/spherex?replicaSet=rs0&directConnection=true
 ```
 
-Następnie `pnpm db:init` i `pnpm dev`. Compose jest wyłącznie lokalny; port bazy jest wystawiony na `127.0.0.1`. `pnpm db:down` zatrzymuje bazę i zachowuje wolumen. Do Atlas nie uruchamiamy lokalnego skryptu inicjalizacji replica set.
+Then initialize indexes and run the application. Compose binds MongoDB to loopback. `pnpm db:down` stops it while retaining the volume. Do not run local replica-set bootstrap against Atlas.
 
-## Kontrola jakości
+## Verification and troubleshooting
 
 ```bash
 pnpm check
 pnpm test:integration
+pnpm test:imaging
 pnpm demo:scenario
 ```
 
-Pierwsza komenda uruchamia lint, sprawdzenie typów, testy offline i build. Druga testuje rzeczywisty tymczasowy replica set, a nie Atlas użytkownika. Wyniki testu lokalnego nie potwierdzają dostępu do Twojego klastra — ten sprawdza `health/ready` po uzupełnieniu URI.
+Integration tests use their own temporary MongoDB replica set, not your Atlas cluster. They do not prove access to that cluster; `health/ready` checks the configured connection. The synthetic demo is not archive/model evidence.
 
-Przy zmianie kontraktów podczas `pnpm dev` uruchomić `pnpm --filter @spherex/contracts build`; szkielet nie ma jeszcze automatycznego watch dla tego pakietu.
+When changing contracts during development, rebuild `pnpm --filter @spherex/contracts build` if the development command has not rebuilt them. Archive preparation may take minutes and should show progress/cancellation. Run only one API process with the local queue. Optional durable image storage and migration are documented in the [README](../README.md#cache-and-persistence).

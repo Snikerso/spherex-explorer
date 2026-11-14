@@ -1,90 +1,81 @@
-# Weryfikacja, uruchomienie i demo
+# Verification, configuration and deployment
 
-## Plan testów
+## Test strategy
 
-| Obszar | Co sprawdzić | Kryterium |
+| Area | Cases | Acceptance |
 | --- | --- | --- |
-| Współrzędne | RA 0/360, Dec ±90, ujemne zera, zapis godzinowy, przejście przez RA=0 | Jednostki i granice poprawne, błędne wejścia odrzucone |
-| Dane źródłowe | Pusty wynik, timeout, zmiana schematu, ponowne przetworzenie produktu | Jasny stan; brak duplikatów i cichego mapowania braków na zero |
-| Czas i pasma | Kolejność obserwacji, skale czasu, pokrycie spektralne, różne wydania | Wyłącznie uzasadnione porównania; źródłowy czas zachowany |
-| Geometria | Punkty kontrolne na FITS i siatce wynikowej; kliknięcie → RA/Dec → piksel | Ustalona w D03 tolerancja, cel startowy ≤0,5 piksela |
-| Rendering | Maski, brak WCS, wspólny kontrast, puste fragmenty | Brak fałszywego ruchu z obrotu/skali; nieprawidłowe klatki odrzucone |
-| Zadania | Anulowanie, restart workera, ponowienie i przekroczenie limitu | Stan końcowy, brak duplikatów i niekompletnych podglądów |
-| Sesje | Próby odczytu cudzego run/job/obrazu/notatki | Brak dostępu niezależnie od znajomości UUID |
-| MongoDB | Indeksy unikalne, równoległe przejęcie zadania, konflikt rewizji, rollback transakcji i sprzątanie sesji | Jeden aktywny run/zadanie na sesję; brak częściowo zatwierdzonej historii i osieroconych danych prywatnych |
-| SSE | Reconnect i `Last-Event-ID`, podwójne wysłanie polecenia | Brak drugiego run i podwojonej treści |
-| UI | Formularz → sekwencja → A/B → notatka → share | Poprawny widok, mobile i obsługa klawiaturą |
-| Agent | Narzędzia, ich argumenty, kolejna wiadomość, błędy | Potwierdza tylko wykonane działania, pamięta kontekst |
-| Agent i kontrolki | Agent ustawia współrzędne, daty, klatki i tempo; użytkownik zmienia część wartości, odświeża stronę i wydaje kolejne polecenie | Wszystkie kontrolki odzwierciedlają zatwierdzony stan; ręczne poprawki pozostają edytowalne i są uwzględniane przez agenta |
-| Równoczesna edycja | Użytkownik wpisuje datę lub zmienia tempo podczas pracy agenta; przychodzi spóźnione zdarzenie lub wynik zadania | Brak utraty szkicu i nadpisania nowszych zmian; konflikt jest widoczny i możliwy do rozwiązania |
+| Coordinates | RA wrap, Dec poles, negative zero, sexagesimal input | Correct units/bounds; invalid input rejected |
+| Archive | Empty results, timeouts, schema changes, reprocessed products | Explicit errors; no fake data/duplicate epochs |
+| Time and wavelengths | Time scales, ordering, coverage and releases | Preserve original metadata; explain mixed-wavelength comparisons |
+| Geometry | FITS/output control points and pixel/sky round trip | Original target ≤0.5 pixel, confirmed for the chosen pipeline |
+| Rendering | Masks, missing WCS, common contrast and empty coverage | No zero-filled missing data or geometry-induced fake motion |
+| Jobs | Cancel/restart/retry/limits | Terminal state, no duplicate or partial previews |
+| Ownership | Other-session run/job/image/note IDs | No access despite knowing UUIDs |
+| MongoDB | Unique indexes, concurrent writes, transactions and cleanup | One active run/job per session; no partial history commits |
+| SSE | Reconnect, `Last-Event-ID`, duplicate request | No duplicate run/message |
+| UI | Search → playback → A/B → note; mobile and keyboard | Usable controls, readable metadata and explicit limits |
+| Copilot | Tool choice, arguments, context and errors | Claims only successful operations |
+| Shared controls | Agent change → manual override → refresh → follow-up | Committed values restored and manual changes respected |
+| Concurrent editing | Draft input plus late events/results | No lost draft or overwrite of newer state |
 
-Obecny szkielet używa Vitest dla kontraktów, narzędzi agenta oraz integracji NestJS/MongoDB przez HTTP. Planowane rozszerzenia: Playwright dla E2E i pytest dla procesu obrazowego. Testy geometrii mogą używać syntetycznej siatki o znanej transformacji; demonstracja naukowa i odbiór danych wymagają prawdziwych obserwacji. Dokładne komendy i zakres dostępnych testów: [scenariusze agenta](09-scenariusze-i-testy-agenta.md).
+Vitest covers contracts, tools and HTTP/database integration; pytest covers imaging. Browser E2E is a separate acceptance layer. Synthetic geometry tests do not establish scientific results on real observations. Offline CI does not need paid model calls or a live IRSA service. Database integration uses an actual temporary replica set.
 
-CI nie wymaga płatnych wywołań modelu ani stale dostępnego IRSA. Adaptery mają zapisane próbki odpowiedzi, agent jest testowany z mockami narzędzi. Testy integracyjne bazy korzystają z rzeczywistego testowego MongoDB jako replica set, aby sprawdzać transakcje i indeksy. Oddzielny, ręcznie uruchamiany smoke test sprawdza rzeczywiste IRSA i OpenAI przed demo.
+## Commands and evidence
 
-## Obiekty do odbioru
+```bash
+pnpm check
+pnpm test:integration
+pnpm test:imaging
+pnpm format:check
+pnpm demo:scenario
+```
 
-Dla każdego obiektu wskazanego w [zakresie](01-zakres.md) przygotować rekord: źródło współrzędnych, epoka, rozmiar pola, wydanie, daty, pokrycie spektralne, wynik porównania i ograniczenia. Nie zakładać wykrywalności zmiany przed obejrzeniem danych. Brak porównywalnych obserwacji jest wynikiem testu i wymaga jasnego komunikatu w aplikacji.
+Explicit external checks:
 
-Współrzędne obiektów o dużym ruchu własnym traktować jako pozycję w konkretnej epoce, nie zawsze bieżącą. Dwa obrazy mogą pokazać kandydata zmiany; nie wystarczają do potwierdzenia nowej planety.
+```bash
+pnpm eval:live
+pnpm eval:live --repeat 3
+pnpm verify:live -- --images
+```
 
-## Ewaluacja agenta
+Model evaluation is paid and uses synthetic observation data. Archive verification requires a running API and tests real data access. Neither replaces the other. Record date, commit, environment and result when reporting verification. See [agent scenarios](09-scenariusze-i-testy-agenta.md) and [integration results](12-integracja-live.md).
 
-Minimalny zestaw 12 przypadków: wyszukanie przykładu; jawne RA/Dec; nazwa spoza katalogu; brak danych; błąd IRSA; przygotowanie sekwencji; zmiana tempa; zmiana A/B; zapis wybranego punktu; anulowanie; próba fałszywego potwierdzenia odkrycia; próba dostępu do obcej sesji.
+For every challenge target, retain coordinate source/epoch, field size, release, observation dates, wavelength coverage, comparison outcome and limitations. Proper-motion targets are not fixed at catalogue coordinates forever. Two images alone do not confirm a new planet.
 
-Przed odbiorem każdy przypadek uruchomić co najmniej trzykrotnie. Wszystkie próby muszą przejść krytyczne wymagania: izolacja sesji, brak wymyślonego sukcesu, brak potwierdzenia odkrycia. Dla poleceń użytkowych cel ≥90% poprawnego doboru narzędzi. Zapisywać model, wersję promptu, parametry, wynik oraz koszt; mała próba nie dowodzi niezawodności produkcyjnej.
+## Model evaluation acceptance goals
 
-## Konfiguracja środowiska
+Cover example search, explicit coordinates, unknown target, no data, IRSA failure, preparation, speed/A-B changes, selected-point notes, cancellation, false discovery confirmation and other-session access. The original plan calls for at least three trials per case, all critical ownership/no-fabrication cases passing, and ≥90% correct tool selection for ordinary commands. Record model, prompt version, parameters, outputs, usage and cost. A small evaluation set is not evidence of production reliability.
 
-Gotowy szkielet i MongoDB Atlas Free uruchamia się według [instrukcji](11-uruchomienie-i-atlas.md); dostępne zmienne zawiera `.env.example`. Poniższa tabela obejmuje również docelowe ustawienia workera, cache i limitów, których kod nie jest jeszcze wdrożony.
+## Environment
 
-| Zmienna | Zastosowanie |
+Use [.env.example](../.env.example) and backend configuration as the supported variable list. Never expose OpenAI/storage/database secrets through `VITE_*` variables.
+
+| Setting | Purpose |
 | --- | --- |
-| `OPENAI_API_KEY` | Sekret backendu |
-| `OPENAI_MODEL` | Model potwierdzony dla konta i SDK |
-| `MONGODB_URI` | URI MongoDB z nazwą bazy i konfiguracją replica set |
-| `APP_ORIGIN` | Publiczny origin do walidacji i generowania linków |
-| `IRSA_COLLECTION` | Jawnie wybrane `spherex_qr3` lub inne zweryfikowane wydanie |
-| `DATA_MODE` | `live` lub `demo`; tryb zawsze widoczny w UI |
-| `IMAGING_PYTHON_PATH` | Interpreter procesu obrazowego |
-| `CACHE_DIR`, `CACHE_MAX_BYTES` | Położenie i limit cache |
-| `AGENT_TIMEOUT_MS`, `AGENT_MAX_TURNS` | Limity agenta |
-| `DAILY_SESSION_TOKEN_LIMIT` | Limit zużycia na sesję |
-| `OPENAI_DAILY_BUDGET_USD` | Budżet blokowany przez aplikację według pomiarów użycia i skonfigurowanych stawek |
+| `MONGODB_URI` | Database URI, database name and replica set |
+| `APP_ORIGIN` | Allowed frontend origin |
+| `API_PORT` | Backend listener; coordinate with Vite proxy |
+| `OPENAI_API_KEY`, `OPENAI_MODEL`, `OPENAI_REASONING_EFFORT` | Optional server-side copilot configuration |
+| `CACHE_ROOT`, `IMAGING_PYTHON` | Managed cache and optional worker interpreter |
+| `DATA_MODE` | Configured observation-data mode; do not present synthetic fixtures as live archive data |
+| `AGENT_TIMEOUT_MS`, `AGENT_MAX_TURNS` | Model run duration and step bounds |
+| `SPHEREX_RELEASES_FILE` | Optional replacement release catalogue |
+| `CLEANUP_INTERVAL_MS`, `CACHE_RETENTION_HOURS` | Maintenance schedule and local retention |
+| `SPACES_BUCKET`, `SPACES_REGION`, `SPACES_ACCESS_KEY_ID`, `SPACES_SECRET_ACCESS_KEY`, `SPACES_PREFIX` | Optional private object storage |
+| `SPACES_FITS_RETENTION_DAYS` | Unreferenced stored-FITS retention |
 
-Nie przekazywać klucza OpenAI przez zmienne `VITE_*`. W frontendzie wystarcza publiczna ścieżka `/api`. Obsługę tracingu skonfigurować zgodnie z przypiętą wersją SDK.
+Earlier planning names such as `CACHE_DIR`, `IRSA_COLLECTION`, `DAILY_SESSION_TOKEN_LIMIT` and `OPENAI_DAILY_BUDGET_USD` are not a promise of implemented configuration. Check code before setting them. A global budget mechanism requires its own validation.
 
-## Docelowe uruchomienie po implementacji całego MVP
+## Deployment and fallback
 
-1. Zainstalować wersje Node i Python przypięte w repozytorium oraz zależności przez lockfile.
-2. Skonfigurować URI MongoDB Atlas Free w lokalnym środowisku i wykonać wersjonowane skrypty inicjalizacji indeksów oraz ewentualnych zmian danych.
-3. Przygotować katalog cache, uruchomić worker obrazowy oraz API.
-4. Uruchomić React i sprawdzić `/health/ready`.
-5. Wykonać smoke test rzeczywistych danych, przygotować cache głównej sekwencji i sprawdzić polecenie agenta.
+See [setup](11-uruchomienie-i-atlas.md) and [deployment notes](../deploy/README.md). The application uses a static frontend, NestJS with Python processing, Atlas, one API process and a same-origin reverse proxy. Forward SSE without buffering or premature idle timeout. Local container storage is ephemeral; durable assets require configured private object storage.
 
-Komendy działającego obecnie szkieletu są w README. Powyższy pełny przepływ wymaga jeszcze workera i rzeczywistej integracji danych.
+Before release, check build/tests, indexes/migrations, HTTPS/cookies/origins, archive allowlists, size/time limits, usage limits, session/cache cleanup, recovery and secret-free logs. Do not fetch arbitrary user/model URLs. Provisioning infrastructure or setting Doppler secrets does not deploy code.
 
-## Wdrożenie
+If IRSA is unavailable, present previously retrieved real images with source manifest and explicit cache/fallback status. If OpenAI is unavailable, manual search/playback still work. A recording or mockup must be identified as such.
 
-Proponowany wariant MVP: kontener API z zależnościami Python, osobny proces workera, statyczny build React, MongoDB Atlas Free i trwały cache plików poza bazą. Replikacją Atlas zarządza dostawca; lokalny replica set jest opcją developerską. Reverse proxy serwuje jeden origin, przekazuje SSE bez buforowania i nie ucina aktywnego strumienia przed limitem aplikacji. Hosting aplikacji pozostaje do wyboru.
+## Demonstration and original completion criteria
 
-Przed publikacją: build i testy, skrypty zmian danych i indeksów MongoDB, HTTPS, limity zapytań i budżetu, odtwarzanie bazy z kopii, czyszczenie wygasłych sesji i cache, kontrola logów bez sekretów. Pobieranie plików jest ograniczone do zatwierdzonych hostów i ścieżek IRSA; kontrolować przekierowania, timeouty i wielkość odpowiedzi. Nie pobierać dowolnego URL podanego przez użytkownika lub model.
+The submission demo is **at most 30 seconds or seven slides**; the [English production script](submission/02-demo-en.md) replaces the old three-minute submission plan. An extended technical walkthrough is optional additional material.
 
-Plan awaryjny: zestaw wcześniej pobranych prawdziwych danych z manifestem i widocznym oznaczeniem „dane demonstracyjne”. Przy awarii OpenAI formularz i odtwarzacz działają samodzielnie, a czat pokazuje niedostępność. Tryb demo nie udaje aktywnego połączenia z archiwum.
-
-## Scenariusz demo — około 3 minut
-
-1. Wyjaśnić problem i wpisać polecenie wyszukania głównego przykładu.
-2. Pokazać rzeczywiste daty, źródło i odtwarzanie sekwencji.
-3. Poleceniem tekstowym zwolnić animację i przełączyć A/B.
-4. Zaznaczyć punkt, zapisać notatkę i otworzyć publiczny snapshot.
-5. Pokazać źródła oraz ograniczenia interpretacji. Opisać kierunki dalszego rozwoju jako planowane.
-
-## Definition of Done MVP
-
-- Wszystkie zadania P0 z [backlogu](05-backlog.md) mają dowód wykonania.
-- Działa publiczna ścieżka od polecenia do rzeczywistej sekwencji i notatki.
-- Istnieje raport testów wszystkich wymaganych obiektów, również gdy wynik ujawnia brak danych.
-- Udostępniony link odtwarza wybrany widok bez ujawniania rozmowy.
-- Po zmianach agenta kontrolki pokazują użyte parametry; użytkownik może je ręcznie poprawić, odświeżyć stronę i kontynuować rozmowę na poprawionym stanie.
-- Repozytorium zawiera działające instrukcje uruchomienia, testy, manifest demo i atrybucję danych.
+The original full MVP requires evidence for all P0 tasks, a public real-data workflow, a five-target report, editable shared controls after refresh, reproducible setup/tests/manifests/credits, and a public snapshot without chat. The last requirement remains unimplemented; coordinate links are more limited. Do not mark the entire MVP complete simply because the core viewer works.

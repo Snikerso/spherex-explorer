@@ -1,73 +1,58 @@
-# Zakres i wymagania
+# Scope and requirements
 
-## Cel
+## Goal and challenge
 
-Ułatwić osobie bez doświadczenia astronomicznego porównanie rzeczywistych obrazów tego samego obszaru nieba. Czat ma wykonywać operacje w aplikacji: wyszukanie danych, wybór sekwencji, zmianę widoku i zapis notatki.
+Help people without an astronomy background compare real images of the same sky region. The copilot performs application operations: finding observations, preparing a sequence, changing the view, and saving a note.
 
-## Powiązanie z wyzwaniem
+The [Planet X and SPHEREx challenge](https://www.spaceappschallenge.org/2026/challenges/planet-x-and-spherex/) asks for a public web tool accepting RA/Dec, displaying successive SPHEREx images, and helping users notice changes. Example targets are Barnard’s Star, Epsilon Indi B, WISE 0855, RW Aurigae, and R Draconis. Optional directions include field-of-view selection, bands, image arithmetic, spectra, Gaia/WISE overlays, metadata, and URL coordinates.
 
-Oficjalne zadanie wymaga publicznego narzędzia webowego: podania RA/Dec, wyświetlenia kolejnych obrazów SPHEREx i łatwego zauważania zmian. Wskazane obiekty testowe: Barnard’s Star, Epsilon Indi B, WISE 0855, RW Aurigae i R Draconis. Opcjonalne kierunki obejmują wybór pola widzenia, obsługę pasm, dodawanie/odejmowanie obrazów, widma, nakładki Gaia/WISE, metadane i współrzędne w URL. [Źródło: oficjalne wyzwanie](https://www.spaceappschallenge.org/2026/challenges/planet-x-and-spherex/).
+This document retains the original acceptance goals. The agent and session design are my solution choices. Current implementation and departures from the original plan are recorded in the [integration report](12-integracja-live.md).
 
-Agent, zapis sesji i poniższy podział na etapy są naszym projektem rozwiązania. Odbiór obejmuje także testy na wszystkich pięciu obiektach wskazanych powyżej.
+## Audience
 
-## Użytkownicy
+- Visitors: enter a request, view playback, and understand basic metadata.
+- Astronomy enthusiasts: choose coordinates, filter observations, and save annotations.
+- The project author: prepare reproducible examples, diagnose data issues, and demonstrate the workflow.
 
-- Odwiedzający: wpisuje polecenie, ogląda animację i rozumie podstawowe metadane.
-- Użytkownik zainteresowany astronomią: wybiera współrzędne, filtruje obserwacje i zapisuje adnotacje.
-- Zespół projektu: dodaje sprawdzone przykłady, diagnozuje problemy danych i prezentuje demo.
+## Original MVP acceptance criteria
 
-## MVP — P0
-
-| ID | Funkcja | Kryterium odbioru |
+| ID | Feature | Acceptance criterion |
 | --- | --- | --- |
-| F01 | Wyszukiwanie obszaru | Formularz RA/Dec i rozmiaru pola; walidacja stopni oraz opcjonalnie zapisu h/m/s i d/m/s; jasne błędy |
-| F02 | Przykładowe obiekty | Przyciski dla zestawu testowego; każda pozycja ma źródło i epokę współrzędnych |
-| F03 | Integracja SPHEREx | Wyszukanie rzeczywistych obserwacji; data, wydanie, detektor, zakres długości fali, pochodzenie |
-| F04 | Przygotowanie klatek | Wspólny obszar i siatka nieba; zgodne dane spektralne; udokumentowana normalizacja |
-| F05 | Odtwarzacz czasowy | Play/pause, poprzednia/następna klatka, prędkość, daty; co najmniej dwie odrębne epoki w sprawdzonym przykładzie |
-| F06 | Porównanie A/B | Przełączanie dwóch klatek oraz widok obok siebie; wspólny zoom i położenie |
-| F07 | Czat tekstowy | Odpowiedź strumieniowa, historia rozmowy, anulowanie i czytelny status wykonywanej operacji |
-| F08 | Agent wykonujący operacje i synchronizacja kontrolek | Każda zatwierdzona zmiana agenta aktualizuje odpowiednie pola, zaznaczenia i suwaki; użytkownik może ręcznie poprawić ustawienia i kontynuować bez odtwarzania ich od zera |
-| F09 | Metadane i ograniczenia | Źródła, daty, pokrycie i jakość danych; jawny stan braku danych lub braku porównywalnej pary |
-| F10 | Notatka i link | Zaznaczenie punktu w RA/Dec, zapis komentarza i jawne utworzenie publicznego widoku bez historii czatu |
-| F11 | Działający serwis | HTTPS, odseparowane sesje, limity użycia i gotowy scenariusz demo |
+| F01 | Region search | RA/Dec and field size; degree validation and optional sexagesimal entry; clear errors |
+| F02 | Example targets | Each target has a coordinate source and epoch |
+| F03 | SPHEREx integration | Real observations with time, release, detector, wavelength and provenance |
+| F04 | Frame preparation | Common sky grid; documented spectral policy and normalization |
+| F05 | Time player | Play/pause, previous/next, speed and dates; a verified example with two distinct epochs |
+| F06 | A/B comparison | Blink and side-by-side with shared zoom/pan |
+| F07 | Text chat | Streaming, conversation history, cancellation and operation status |
+| F08 | Shared controls | Agent changes update visible controls; manual changes remain editable and inform the next run |
+| F09 | Metadata and limits | Sources, dates, coverage, quality, empty results and insufficient comparison data are explicit |
+| F10 | Notes and sharing | Sky-coordinate note; planned public snapshot excluding conversation history |
+| F11 | Public service | HTTPS, isolated sessions, usage limits and a rehearsed demo |
 
-## Rozszerzenia
+F10 is only partially implemented: coordinate links recreate a search context, not an image/session snapshot. The current multiband playback permits differing wavelengths and warns about their interpretation; it does not promise spectrally matched frames.
 
-**P1 — po ukończeniu P0:** obraz różnicowy po wyrównaniu i kontroli PSF, pomiar przesunięcia z niepewnością, nakładki katalogowe, eksport adnotacji, większe pola i mozaiki.
+## Original extensions and exclusions
 
-**P2 — dalszy rozwój:** widma, fotometria i krzywe blasku, automatyczne proponowanie kandydatów, konta i współpraca użytkowników, kolejka większych analiz.
+P1 proposed PSF/background-aware difference images, displacement measurements with uncertainty, catalogue overlays, annotation export, larger fields, and mosaics. P2 proposed photometry, light curves, spectra, candidate suggestions, accounts, collaboration, and a larger job queue. Some exploratory versions now exist; their presence does not establish calibrated scientific measurements.
 
-Poza MVP: potwierdzanie odkryć, wyznaczanie orbit z dwóch klatek, pełny przegląd całego nieba oraz trening własnego modelu detekcji.
+Confirmed discoveries, orbit determination from two frames, a complete all-sky search, and training a custom detection model remain outside scope.
 
-## Przebieg głównego scenariusza
+## Main workflow
 
-1. Użytkownik wpisuje: „Pokaż WISE 0855 i porównaj dostępne obserwacje”.
-2. Agent rozpoznaje nazwę, wyszukuje dane i zwraca liczbę dostępnych klatek.
-3. Backend wybiera porównywalną grupę i przygotowuje obrazy; UI pokazuje postęp.
-4. Agent otwiera sekwencję. Użytkownik włącza animację lub pisze „Odtwórz wolniej”.
-5. Użytkownik zaznacza interesujący punkt i prosi o zapisanie notatki.
-6. Aplikacja zapisuje użyte obserwacje i parametry. Publiczny link powstaje po wybraniu „Udostępnij”.
+1. Ask: “Show WISE 0855 and compare available observations.”
+2. Resolve the example coordinates and query the archive.
+3. Select observations and prepare images; show progress and cancellation.
+4. Open playback or A/B; adjust manually or ask the copilot to slow down.
+5. Select a sky position and save a note.
+6. Retain observation references and processing parameters; share coordinates if needed.
 
-Po operacjach agenta formularz zawiera użyte współrzędne, pole i daty; checkboxy wskazują wybrane obserwacje, a przełączniki i suwak pokazują bieżący tryb i tempo. Użytkownik może zmienić pojedyncze ustawienie. Agent uwzględnia tę poprawkę w kolejnym poleceniu. Dotyczy to również stanu odtworzonego po odświeżeniu strony.
+A search around WISE 0855 is not evidence that WISE 0855 itself is visible. If data are missing, show the empty result and suggest another region or example. Never substitute generated astronomical images.
 
-Gdy danych jest za mało, aplikacja proponuje większy obszar, inny przedział dat albo sprawdzony przykład. Nie uzupełnia obserwacji wygenerowanymi obrazami.
+Agent-selected coordinates, dates, observations, mode and speed appear in the same manual controls. Date changes require a new search; observation changes require preparation; playback speed changes immediately. Restore committed state after refresh and protect unfinished input from late events.
 
-## Układ interfejsu
+## Interface and quality goals
 
-Wybrany kierunek: nowoczesny kokpit kosmicznego myśliwca inspirowany X-wingiem i szkicem użytkownika. Szczegóły: [interfejs kokpitu](08-interfejs-kokpit.md).
+The [cockpit interface](08-interfejs-kokpit.md) has navigation/search, a central image, instruments/notes, a timeline, and a copilot. Mobile uses tabs rather than shrinking the desktop layout.
 
-- Góra: nazwa, bieżący obiekt, status źródła danych i język.
-- Lewa konsola: obiekt, RA/Dec, rozmiar pola, daty, wyszukiwanie i wybór obserwacji.
-- Środek: duży ekran obrazów, podział A/B, skala kątowa, orientacja, zaznaczenia i zoom.
-- Prawa konsola: tryb widoku, źródła, metadane, jakość danych, wybrany punkt i notatki.
-- Dół: oś czasu, sterowanie odtwarzaniem oraz tekstowy copilot z historią i statusem operacji.
-- Mobile: przełączane zakładki i uproszczona rama kokpitu; bez pomniejszania całego panelu desktopowego.
-
-## Wymagania jakościowe — cele projektowe
-
-- Sterowanie klawiaturą, etykiety kontrolek, wyraźny fokus; animacja uruchamiana świadomie.
-- Każdy obraz ma widoczną datę; nierówne odstępy obserwacji są opisane na osi czasu.
-- Na przygotowanym zestawie: interfejs gotowy do użycia do 3 s, pierwsza klatka z cache do 5 s, płynne odtwarzanie 2 kl./s po pobraniu klatek.
-- Dla danych pobieranych na żywo pokazywać postęp i limit czasu, bez obietnicy stałej szybkości archiwum.
-- Każde twierdzenie agenta o dostępności danych wynika z wyniku narzędzia. Obserwacja zmiany pozostaje kandydatem do weryfikacji.
+Original performance targets were UI readiness within 3 seconds, a cached first frame within 5 seconds, and smooth 2 fps playback after loading. These are goals, not guarantees. Live archive requests show progress and timeout state. Dates remain visible, uneven time spacing is explained, keyboard focus is clear, and playback starts deliberately. Any availability claim by the copilot must follow a tool result; an apparent change remains a candidate for verification.

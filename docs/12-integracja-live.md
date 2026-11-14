@@ -1,12 +1,14 @@
-# Integracja live — 14 listopada 2026
+# Integration report — 14 November 2026
 
-Działający lokalnie przepływ obejmuje NestJS/MongoDB, wyszukiwanie SIA2 IRSA, pobieranie wycinków FITS, wspólną siatkę WCS TAN, odtwarzanie Blink, A/B, notatki i agenta OpenAI Agents SDK. Agent i ręczne kontrolki zapisują ten sam stan z rewizją. SSE odtwarza zdarzenia po Last-Event-ID. Historia SDK i wiadomości pozostają w sesji MongoDB.
+This report records implementation changes and historical local observations. Later sections supersede earlier pipeline/UI behavior. These are not fresh verification results produced by the English documentation update. Public deployment can lag the current source tree.
 
-## Zweryfikowane dane
+The local flow includes NestJS/MongoDB, IRSA SIA2 search, FITS cutouts, a common TAN WCS grid, blink/A-B, notes and the OpenAI Agents SDK. Copilot and manual controls write the same revisioned state. SSE replays events after `Last-Event-ID`; SDK history and messages remain session-scoped in MongoDB.
 
-Zapytania o pole 0,1°, bez ograniczenia dat, wydanie DR1:
+## Verified archive searches
 
-| Cel | Produkty |
+Field width 0.1°, no date filter, DR1:
+
+| Target field | Products |
 | --- | ---: |
 | Barnard’s Star | 259 |
 | Epsilon Indi B | 417 |
@@ -14,124 +16,136 @@ Zapytania o pole 0,1°, bez ograniczenia dat, wydanie DR1:
 | R Draconis | 459 |
 | WISE 0855 | 297 |
 
-To wyniki wyszukiwania, nie potwierdzenie wykrycia tych obiektów. Dla WISE 0855 QR3 zwróciło pustą listę.
+These are field-search counts, not confirmation that the named objects are detected. WISE 0855 in QR3 returned no results.
 
-Sprawdzona para WISE 0855 / D1: 6 maja 2025 12:20 UTC i 31 października 2025 18:55 UTC; długości fali w centrum odpowiednio 0,9937 i 0,9913 µm. Obrazy są wizualnym podglądem, bez dopasowania PSF i bez fotometrii. Nie deklarujemy widoczności samego WISE 0855 ani jego detekcji.
+A checked WISE 0855-field / D1 pair used 6 May 2025 12:20 UTC and 31 October 2025 18:55 UTC, with center wavelengths 0.9937 and 0.9913 µm. These are visual previews without PSF matching or source photometry. No visibility/detection of WISE 0855 itself is claimed.
 
-## Maska jakości
+## Historical quality policy v3
 
-Poprzedni filtr `FLAGS == 0` błędnie usuwał także flagę SOURCE (bit 21), oznaczającą piksele zawierające sygnał źródeł astronomicznych. Polityka v3 zachowuje flagi 0 i sam SOURCE. SOURCE połączony z inną flagą nadal jest maskowany. [Definicje IRSA](https://irsa.ipac.caltech.edu/onlinehelp/spherex/spherex/sp.html), [przykład IRSA](https://caltech-ipac.github.io/irsa-tutorials/spherex-source-discovery-tool-demo/).
+The previous `FLAGS == 0` filter incorrectly removed SOURCE (bit 21), which identifies astronomical source signal. Policy v3 preserves unflagged pixels and SOURCE-only pixels; SOURCE combined with a defect remains masked. See [IRSA flags](https://irsa.ipac.caltech.edu/onlinehelp/spherex/spherex/sp.html) and the [IRSA source-discovery example](https://caltech-ipac.github.io/irsa-tutorials/spherex-source-discovery-tool-demo/).
 
-Przełącznik „Maska jakości” znajduje się nad obrazem. Włączony ukrywa piksele z pozostałymi flagami lub nieprawidłową wariancją. Wyłączony pokazuje wariant diagnostyczny, również z problematycznymi pikselami. Oba warianty stosują tę samą siatkę, wspólny kontrast asinh i kontrolę zgodności długości fali. Brakujące lub niezgodne spektralnie piksele nie są uzupełniane.
+The historical quality toggle selected masked/unmasked variants produced together on the same grid and contrast, without downloading FITS again. Masked pixels included other flags or invalid variance. The checked pair's common coverage changed from an incorrect 27.5% to 67.6% after preserving SOURCE; the unmasked diagnostic variant had 84.7%. Old manifests without both assets needed reprocessing.
 
-Dla sprawdzonej pary wspólne pokrycie zmieniło się z błędnych 27,5% na 67,6% po zachowaniu SOURCE; wariant bez maski jakości pokazuje 84,7%. Warianty powstają równocześnie w workerze i są przełączane bez ponownego pobierania FITS. Wybór zapisuje się w stanie sesji. Stare manifesty bez obu wariantów wymagają nowego przygotowania sekwencji.
+The toggle was subsequently removed at the author's request. The UI uses `quality=off` and synchronizes existing sessions to `qualityMask=false`; both API asset variants remain for compatibility. Later v5 changes below also remove the older spectral/pairwise coverage restrictions. Numerical analysis continues to apply its own documented quality rules.
 
-## Uruchomienie i kontrole
+## Commands and test coverage
 
 ```bash
 uv sync --project workers/imaging --locked
 pnpm db:up
-pnpm dev:doppler  # sekrety sphere_x / dev; MONGODB_URI może pochodzić z lokalnego .env
+pnpm dev:doppler
 pnpm check
 pnpm test:integration
 pnpm test:imaging
-pnpm verify:live -- --images  # jawny test rzeczywistego archiwum; wymaga działającego API
+pnpm verify:live -- --images # requires a running API; accesses the real archive
 ```
 
-Model: `gpt-6.1-sol`, domyślny wysiłek rozumowania `low`; klucz pozostaje na backendzie. Do wyboru detektora służy deterministyczne `select_observations`, aby model nie musiał przepisywać długich list identyfikatorów.
+The recorded model configuration is `gpt-6.1-sol`, reasoning effort `low`; the key stays on the backend. Deterministic `select_observations` chooses detector observations without making the model reproduce long ID arrays.
 
-Testy offline obejmują kontrolę współrzędnych, konflikty rewizji, zachowanie SOURCE i odrzucenie SOURCE z defektem, wspólny kontrast, orientację PNG oraz zgodność wariantów. Testy HTTP sprawdzają własność zasobów i obu wariantów obrazu, błędne parametry, anulowanie, replay SSE i idempotencję.
+Offline tests cover coordinates, revision conflicts, SOURCE preservation/defect masking, shared contrast, PNG orientation and asset variants. HTTP tests cover ownership, invalid inputs, cancellation, SSE replay and idempotency. The preparation queue requires one API process. Coordinate links do not publish private images/chat. English/Polish UI, cleanup and a public HTTPS deployment were added after the initial integration baseline; deployment notes and current source describe their availability.
 
-Aktualna kolejka obrazów jest lokalna i wymaga jednego procesu API. Publiczne snapshoty, PL/EN, wdrożenie HTTPS, automatyczne sprzątanie cache i kolejka rozproszona pozostają do wykonania. Link z UI udostępnia tylko współrzędne.
+## Detector selection, playback and all-observation export
 
-## Wybór pasma i kompaktowy odtwarzacz
+The detector selector uses D1–D6 and wavelength-range labels from search metadata. Changing it filters the list without downloading files. Earlier versions selected at most 24 observations and retained a spectrally matched subset; those restrictions were later removed. Current searches return at most 500 products, and preparation can include the whole selected result. The panel shows prepared/requested counts and download/coverage warnings.
 
-Suwak nad obrazem wybiera detektor D1–D6; etykieta zakresu µm pochodzi z metadanych bieżącego wyszukiwania. Przesuwanie suwaka zmienia filtr listy, bez pobierania plików. „Przygotuj pasmo” zaznacza do 24 obserwacji wskazanego detektora z odrębnych czasów i uruchamia istniejący pipeline. To wybór zakresu detektora, a nie dowolnej, dokładnej długości fali; zgodny podzbiór weryfikuje WCS-WAVE. Dopóki nowa sekwencja nie jest gotowa, widoczny pozostaje poprzedni obraz ze swoją rzeczywistą długością fali.
+The player combines previous/play-pause/next, frame slider, counter and speed. Dates remain visible; the slider explains irregular observation spacing. A detector represents a wavelength range, not an exact fixed wavelength. Until replacement preparation finishes, the prior image retains its real metadata.
 
-Odtwarzacz ma jeden pasek: poprzednia/play-pauza/następna, suwak klatki, licznik i wybór tempa. Data nadal widnieje przy obrazie. Informacja o nierównych odstępach czasowych jest w podpowiedzi suwaka.
+`POST /sequences/:id/export` checks ownership and frame membership. Monochrome export uses the current band's chronological frames/FPS with UTC/wavelength captions. Encoding uses imageio-ffmpeg's bundled FFmpeg, H.264/yuv420p and faststart. Temporary work files are removed on success or failure. Sync Python dependencies after changing export packages.
 
-## Aktualizacja interfejsu — podgląd bez maski jakości
+## Multiband playback v5
 
-Na życzenie użytkownika usunięto przełącznik maski jakości. Interfejs wyświetla wariant bez maskowania jakości (`quality=off`); istniejące sesje są synchronizowane do `qualityMask=false`. Nadal obowiązuje wspólne pokrycie i zgodność długości fali. Wcześniejszy opis przełącznika dokumentuje historyczną wersję v3; oba warianty plików pozostają dostępne w API dla zgodności zapisanych sekwencji.
+The author requested `tan-all-wavelengths-multiband-v5`, retaining every readable observation covering the field center regardless of wavelength. Largest-compatible-group selection and per-pixel spectral masking were removed. Frames retain individual spatial coverage and share contrast. Dates and wavelengths remain visible and are included in MP4 captions. Warnings explain that differences can reflect wavelength rather than temporal change.
 
-### Wszystkie zdjęcia i MP4
+A cached Andromeda sequence was reprocessed from four to 18 frames without retrieving unavailable IRSA products again. This is a processing example, not a scientific detection result.
 
-Zniesiono limit 24 zdjęć na pasmo w zaznaczaniu, API, agencie, stanie widoku i workerze. Można przygotować wszystkie wyniki bieżącego wyszukiwania (wyszukiwarka zwraca maksymalnie 500 produktów). Filtr zgodności długości fali pozostaje aktywny: detektor nie oznacza jednej długości fali. Panel pokazuje liczbę gotowych klatek względem zleconych zdjęć oraz ostrzeżenia dotyczące pobierania, pokrycia i zgodności spektralnej.
+## RGB and exposure
 
-Przycisk „↓ MP4” eksportuje klatki bieżącego pasma, w kolejności czasowej i przy ustawionym FPS, z podpisami UTC i długością fali. Endpoint POST `/sequences/:id/export` sprawdza właściciela oraz przynależność klatek do jednego pasma. Worker używa `imageio-ffmpeg` z dołączonym FFmpeg, kodowania H.264/yuv420p i faststart. Pliki robocze eksportu są usuwane także po błędzie; po aktualizacji zależności uruchom `uv sync --project workers/imaging`.
+RGB controls offer epoch windows of 1/6/24/72/168 hours and exposure −6…+2 EV. Composites use only prepared frames on the current grid. Selection favors a nearby group with as many distinct detectors as possible, one observation per detector. The span between earliest/latest sources must fit the selected window, and candidates must also fall within that distance of the current frame time.
 
-### Animacja bez filtrowania długości fali
+Sources show actual UTC dates, wavelengths and channel assignments. Shorter wavelengths are blue, intermediate green, longer red; with two bands the green channel is their geometric mixture. These are assigned colors, not photometry. Missing channel coverage remains transparent. There is no PSF matching.
 
-Na życzenie użytkownika pipeline `tan-all-wavelengths-multiband-v5` zachowuje wszystkie poprawnie odczytane obserwacje obejmujące środek pola, niezależnie od długości fali. Usunięto wybór największej zgodnej grupy oraz spektralną maskę pikseli. Każda klatka zachowuje własne pokrycie przestrzenne; kontrast pozostaje wspólny. Daty i długości fali nadal opisują każdą klatkę i trafiają do MP4. Ostrzeżenie wyjaśnia, że różnice mogą wynikać z długości fali, a nie zmian obiektu w czasie. Dotychczasową sekwencję Andromedy przeliczono z cache: 18 klatek zamiast 4, bez ponownego pobierania niedostępnych produktów IRSA.
+The worker stores linear contrast-normalized values before white clipping as little-endian Float32 (`radianceName`). The ownership-checked radiance endpoint serves these arrays. The browser applies `2**EV` before asinh, allowing recovery of detail above the PNG white point. Older sequences fall back to previews and request reprocessing for full exposure adjustment.
 
-### Kolor RGB i jasność
+### RGB MP4
 
-Panel nad obrazem zawiera tryb „Kolor RGB”, okno czasu 1/6/24/72/168 godzin oraz suwak ekspozycji −6…+2 EV. Kompozycja korzysta wyłącznie z przygotowanych klatek bieżącej sekwencji i jej wspólnej siatki WCS. Wybiera najbliższą bieżącej klatce grupę z jak największą liczbą różnych detektorów, po jednej obserwacji na detektor. Całkowity odstęp między najwcześniejszą a najpóźniejszą obserwacją nie przekracza wybranego okna; kandydaci muszą też znajdować się w tym odstępie od bieżącej daty. Lista źródeł pokazuje faktyczne daty UTC, długości fali oraz przypisanie do kanałów. Krótsze fale są niebieskie, środkowe zielone, dłuższe czerwone; przy dwóch pasmach zielony jest geometryczną mieszanką obu. Są to kolory umowne, nie fotometria. Brakujące kanały pozostają przezroczyste; nie ma dopasowania PSF.
+Export accepts `color`, `exposure`, `epochHours` and three `{enabled, detector}` channels. RGB mode labels the button “↓ RGB MP4”. Backend selection uses the same epoch selector as the preview and never accepts client file paths. Epochs lacking two bands or an active selected channel are skipped; no usable epoch returns an explicit error.
 
-Worker zachowuje dla każdej klatki liniowe wartości po normalizacji kontrastu, przed obcięciem bieli, jako little-endian Float32 (`radianceName`). Chroniony endpoint GET `/sequences/:id/frames/:frameId/radiance` udostępnia dane wyłącznie właścicielowi. Przeglądarka stosuje mnożnik `2**EV` przed funkcją asinh, więc suwak może przywrócić szczegóły powyżej punktu bieli PNG. Starsze sekwencje bez tych danych mają podgląd zastępczy i informację o potrzebie ponownego przygotowania. Regulacja dotyczy podglądu; istniejący eksport MP4 pozostaje eksportem pojedynczego pasma i jest nieaktywny podczas kompozycji RGB.
+Encoding preserves FPS, automatic/manual assignments, disabled channels and EV, with the same asinh/exposure function. Captions retain epoch time, EV, RGB settings and source dates/wavelengths. Monochrome export also honors exposure. This supersedes the earlier limitation that RGB export was unavailable.
 
-### MP4 z kolorowej animacji
+## Release catalogue and analysis laboratory
 
-Eksport przyjmuje opcjonalne ustawienia `color`, `exposure`, `epochHours` i trzy kanały `{enabled, detector}`. Przy włączonym RGB przycisk ma nazwę „↓ RGB MP4”. Serwer wyznacza źródła każdej epoki tym samym selektorem co podgląd; żadna ścieżka pliku nie pochodzi od klienta. Epoki bez co najmniej dwóch pasm lub bez wybranego aktywnego kanału są pomijane, a brak jakiejkolwiek poprawnej epoki zwraca opisowy błąd. Kodowanie zachowuje FPS, przypisanie automatyczne/ręczne, wyłączenie kanałów i EV. Funkcja asinh i mnożnik ekspozycji odpowiadają podglądowi. Podpisy zawierają datę epoki, EV, konfigurację RGB oraz daty i długości fali zdjęć źródłowych. Eksport monochromatyczny także uwzględnia ustawioną jasność.
+`config/spherex-releases.json` defines Level 2 IDs, labels, SIA collections, IBE product prefixes and enabled state. `defaultRelease` initializes sessions; `SPHEREX_RELEASES_FILE` can replace the file. The API validates and reloads it when mtime changes; `GET /data-releases` supplies the UI. Refreshing releases needs no frontend rebuild.
 
-### Katalog wydań i laboratorium widmowe
+A format-compatible release can be added through configuration; a changed FITS format still needs adapter validation/tests. Different releases are not mixed within a sequence. Allowed product hosts remain HTTPS IRSA and configured prefixes.
 
-`config/spherex-releases.json` jest jedynym katalogiem wydań Level 2: `id`, etykieta, kolekcja SIA, prefiks produktów IBE i aktywność. `defaultRelease` ustawia domyślne wydanie nowych sesji. Opcjonalny `SPHEREX_RELEASES_FILE` wskazuje inny plik. API waliduje plik i przeładowuje go po zmianie mtime; GET `/data-releases` zasila selektor interfejsu. „Odśwież wydania” aktualizuje go bez przebudowy frontendu. Dodawanie wydania zachowującego format Level 2 wymaga tylko nowego wpisu; nigdy nie miesza ono kalibracji różnych wydań w jednej sekwencji. Zmiana formatu FITS wymaga osobnego sprawdzenia adaptera i testów — nie jest automatycznie uznawana za zgodną. Dozwolony host pozostaje wyłącznie HTTPS IRSA, a prefiks produktu musi figurować w katalogu.
+Point samples and D1–D6 stacks open an analysis panel. `POST /sequences/:id/analyze` uses source FITS for a ready sequence owned by the session, without initiating a new archive search. Paths/manifests are server-controlled; the client supplies mode, coordinates and wavelength bounds. Optional durable storage can restore missing local source files before analysis.
 
-Przyciski „Widmo punktu” i „Stacki D1–D6” otwierają laboratorium nad kokpitem. Analiza POST `/sequences/:id/analyze` korzysta wyłącznie z lokalnych FITS należących do gotowej sekwencji bieżącej sesji, bez nowego wyszukiwania ani pobierania. Zakres λ ogranicza wykorzystane piksele. Ścieżki i manifesty ustala serwer; klient przekazuje jedynie tryb, współrzędne i przedział długości fali.
+### Point samples
 
-Widmo to poglądowy pomiar najbliższego natywnego piksela dla wskazanych współrzędnych: `IMAGE - ZODI`, poprawne flagi jakości, λ/bandwidth z WCS-WAVE oraz σ z pierwiastka VARIANCE. Jednostka to jasność powierzchniowa MJy/sr, nie całkowity Fν źródła. Wykres nie łączy punktów z różnych dat linią; kolory rozróżniają detektory, podpowiedzi zawierają datę i ID. Tabela i CSV zachowują czas, detektor, długość fali, wartość, błąd i źródło. To nie jest fotometria aperturowa/PSF, odjęcie lokalnego tła ani pełne widmo 102 kanałów z gwarancją kompletności. Pełne pokrycie wymaga wystarczającej liczby obserwacji.
+The plot samples the nearest native pixel at the selected sky coordinates using `IMAGE - ZODI`, valid flags, WCS-WAVE wavelength/bandwidth and `sqrt(VARIANCE)` uncertainty. Units are MJy/sr surface brightness, not total source Fν. Points from different times are not connected as a continuous spectrum; detector colors and tooltips retain date/ID. Tables/CSV preserve time, detector, wavelength, value, error and source.
 
-Stacki powstają osobno dla detektorów po projekcji WCS, z ważeniem odwrotnością VARIANCE i flagami jakości. Przy szerokim zakresie mieszają różne długości fali i daty, więc są poglądowym obrazem wielopasmowym. Interpolowana wariancja jest wagą względną, bez propagacji kowariancji resamplingu; narzędzie nie deklaruje liczbowej poprawy S/N ani skalibrowanej fotometrii stacku. Dla każdego stacku dostępne są liczba zdjęć, pokrycie, źródła/czasy i PNG. Test syntetyczny potwierdza średnią 3,6 dla wartości 2 i 10 z wariancjami 1 i 4.
+This is not aperture/PSF photometry, local-background subtraction, or guaranteed complete 102-channel coverage. Sufficient observations are required for broader wavelength coverage.
 
-### Kompozycja RGB ze stacków
+### Detector stacks and stack RGB
 
-W zakładce „Stacki D1–D6” kompozytor pozwala niezależnie włączać kanały R/G/B i wybierać dla każdego dowolny dostępny stack, także ten sam dla kilku kanałów. Niedostępne detektory są oznaczone w selektorach. Domyślne przypisanie to najdłuższy/środkowy/najkrótszy dostępny zakres. Podgląd i pobierany PNG korzystają z tego samego canvasu, z aktualnym EV i stanem checkboxów. Rozmiar PNG odpowiada siatce stacków (256×256); brak danych aktywnego kanału pozostaje przezroczysty. Sekcja źródeł pokazuje liczbę zdjęć i zakresy dat dla kanałów. Jest to wizualna kompozycja gotowych podglądów stacków o niezależnym kontraście, bez gwarancji jednoczesności i bez odzyskiwania wartości już obciętych do bieli w wejściowych PNG.
+Stacks use WCS projection, quality flags and inverse-variance weighting separately by detector. Broad ranges mix wavelengths/dates. Interpolated variance is a relative weight without resampling-covariance propagation; no calibrated stack photometry or numerical S/N improvement is claimed. Each stack exposes image count, coverage, source times and PNG. A synthetic weighted-mean test yields 3.6 from values 2/10 with variances 1/4.
 
-### Porównywanie epok, większe pola i odnośniki
+The stack RGB composer independently enables R/G/B and assigns any available detector stack, including reusing one. Missing detectors are marked. Default assignment uses longest/middle/shortest available ranges. Preview and downloaded PNG use the same canvas, exposure and channel state. Output is 256×256, with absent active-channel coverage transparent. Source summaries retain counts/date spans.
 
-„A ± B” pozwala wybrać dwie obserwacje gotowej sekwencji i wyliczyć A+B albo B−A z `IMAGE - ZODI`, po projekcji na wspólną siatkę i zastosowaniu flag jakości. Domyślnie druga epoka pochodzi z tego samego detektora i ma możliwie zbliżoną długość fali. Porównania nie odrzucają innych fal, ale pokazują ostrzeżenie. Czerwony oznacza dodatnią różnicę B−A, niebieski ujemną. Wynik ma PNG, wspólne pokrycie, zakres wartości MJy/sr i metadane obu źródeł. Bez dopasowania PSF i lokalnego tła nie jest to automatyczny detektor ruchu ani statystycznie skalibrowana mapa istotności.
+Stack RGB combines independently stretched PNG previews. It does not guarantee simultaneity or recover values already clipped in those PNGs.
 
-FOV rozszerzono do 2°. Większe pola mogą mieć częściowe pokrycie pojedynczej ekspozycji; nie są automatycznie mozaikowane. Dla FOV >0,5° limit pobieranego pliku wynosi 128 MiB zamiast 32 MiB. Worker dekoduje i reprojektuje po jednym natywnym FITS, zachowując tylko wspólne tablice 256×256 i metadane, zamiast trzymać wszystkie duże obrazy w RAM. Podgląd nadal ma 256×256 pikseli, więc większy FOV oznacza mniejszą rozdzielczość kątową podglądu. Syntetyczne testy obejmują pola 0,1°, 1° i 2°. Dla sprawdzonych produktów żądania 1–2° zwracały HTTP 503, natomiast kontrolny wycinek 0,1° zwrócił HTTP 200. Obsługa 2° jest potwierdzona syntetycznie; dostępność dużych wycinków w aktualnej usłudze IRSA pozostaje niepotwierdzona.
+## Epoch arithmetic, larger fields and links
 
-Szczegóły flag jakości są dostępne w „Instrumenty” i przy porównaniach. Nazwy `MSKNnnnn` i opisy `MSKDnnnn` pochodzą bezpośrednio z nagłówka FLAGS, z liczbą i odsetkiem pikseli dla każdego ustawionego bitu. SOURCE (bit 21) jest opisywany jako znane źródło, nie automatyczna wada detektora. Metadane nowych klatek zachowują te zestawienia; starsze mogą odczytać je na żądanie ze źródłowego FITS.
+“A ± B” computes A+B or B−A from `IMAGE - ZODI` after projection/quality checks. The default second observation uses the same detector and nearby wavelength where possible. Other wavelengths are allowed with warnings. Red marks positive B−A and blue negative. Output includes PNG, common coverage, MJy/sr range and both source records. Without PSF/background matching this is neither an automatic motion detector nor a calibrated significance map.
 
-Linki obsługują `ra`, `dec`, `fov`, `release`, `from`, `to`, `search=1` oraz `embed=1`. Obie współrzędne są wymagane. `search=1` uruchamia wyszukiwanie, lecz nie pobiera automatycznie wszystkich wycinków. Link i kod iframe nie zawierają identyfikatorów prywatnej sesji. `embed=1` daje zwarty układ bez bocznych paneli; przeglądarkowe ograniczenia ciasteczek między witrynami nadal obowiązują, więc produkcyjne osadzanie cross-site wymaga odpowiedniego projektu sesji/hostingu (domyślna sesja używa SameSite=Lax). W tej zmianie nie osłabiano uwierzytelniania ani OriginGuard. Lokalne/same-site osadzanie korzysta z bieżącej polityki sesji.
+FOV accepts up to 2°. Larger single-exposure fields can have partial coverage; no automatic mosaicking is performed. Above 0.5°, the recorded download limit is 128 MiB instead of 32 MiB. The worker decodes/reprojects one native FITS at a time, retaining common 256×256 planes/metadata rather than all large inputs in memory. Larger FOV reduces angular preview resolution.
 
-„Ten obszar w Aladin Lite” otwiera atlas CDS ze współrzędnymi i FOV. Pipeline FITS nadal korzysta z Astropy i afiliowanego pakietu reproject; nie dodano zewnętrznych skryptów atlasu do głównego kokpitu.
+Synthetic tests cover 0.1°, 1° and 2°. Checked real products returned HTTP 503 for 1–2° and HTTP 200 for a 0.1° control cutout. Thus large-field geometry is tested synthetically, while current live large-cutout availability remains unconfirmed.
 
-### Ziemia, SPHEREx i kierunek obserwacji w nawigacji
+Quality details use `MSKNnnnn` names and `MSKDnnnn` descriptions from FLAGS headers with per-bit counts/percentages. SOURCE bit 21 means known source signal, not automatically a detector defect. New frame metadata preserves summaries; older sequences may read original FITS on demand.
 
-Zakładka „Nawigacja” zastępuje obraz nieba globem i pozycją SPHEREx, pozostawiając formularz współrzędnych po lewej. Zmiany RA/Dec/FOV działają od razu, bez zlecania wyszukiwania IRSA. Glob można obracać, przybliżać i ustawić czas ±120 min; „Teraz” przywraca zegar bieżący. Symbole satelity i stożka FOV są wizualnie powiększone.
+Coordinate URLs support `ra`, `dec`, `fov`, `release`, `from`, `to`, `search=1` and `embed=1`. Both coordinates are required. Search links do not automatically retrieve every cutout. Links/iframes contain no private session identifiers. Embed mode hides side panels; cross-site browser cookies still require a deliberate hosting/session design because default sessions use SameSite=Lax. Authentication/OriginGuard are not weakened for embedding.
 
-GET `/spacecraft-orbit` pobiera wyłącznie elementy dla NORAD 63182 z ustalonego adresu CelesTrak. Sprawdzane są numery katalogowe, długości linii, sumy kontrolne i epoka. Pamięć podręczna trwa 2 godziny i współdzieli żądania równoległe. Przy awarii może zwrócić ostatni zestaw z `stale=true`; brak danych uruchamia jawnie oznaczony schemat nominalny. Przeglądarka odświeża elementy co 2 godziny. Pozycja i trajektoria obliczane są biblioteką satellite.js 6 (SGP4); prognozowanie jest ograniczone do ±7 dni od epoki TLE. Widok pokazuje UTC, epokę, wysokość, prędkość i współrzędne geograficzne.
+The Aladin Lite link opens the CDS atlas with the region/FOV. It does not load external atlas scripts into the main cockpit. FITS processing continues through Astropy/reproject.
 
-Strzałka jest kierunkiem wybranych RA/Dec, nie telemetrią orientacji teleskopu. Konwersja kierunku ICRS do układu orbity jest orientacyjna (bez precesji/nutacji), a zasłonięcie liczone dla sferycznej Ziemi. Brak zasłonięcia nie potwierdza dostępności obserwacji: model nie uwzględnia Słońca, osłon, planu misji ani sterowania instrumentem. Mapa wybrzeży pochodzi z publicznego zbioru Natural Earth 110m.
+## Earth, spacecraft and selected direction
 
-Testy obejmują osie RA/Dec, normalizację kierunku, przecięcie promienia z Ziemią, identyfikację satelity i sumy kontrolne TLE oraz cache i jawny fallback. W UI sprawdzono aktualny TLE, zmianę strzałki po zmianie współrzędnych oraz zatrzymanie i wznowienie czasu.
+Navigation replaces the sky image with a globe and SPHEREx position while leaving search controls available. RA/Dec/FOV changes update the selected direction immediately without a new archive search. Users can rotate/zoom the globe and offset time ±120 minutes; “Now” restores the clock. Spacecraft/FOV symbols are visually enlarged.
 
-### Zarejestrowana orientacja pola a orientacja satelity
+`GET /spacecraft-orbit` uses the fixed CelesTrak source for NORAD 63182. It validates catalogue IDs, line lengths, checksums and epoch. A two-hour cache deduplicates concurrent requests; failures may return cached data with `stale=true`. Without data, the UI uses an explicitly labelled nominal diagram. The browser refreshes every two hours. satellite.js 6 uses SGP4 within ±7 days of the TLE epoch. UTC, element epoch, altitude, speed and geographic coordinates are shown.
 
-W sprawdzonych publicznych źródłach nie znaleziono strumienia bieżącej orientacji ADCS/kwaternionów SPHEREx. Nie wyprowadza się jej z TLE ani z wybranego celu. Nawigacja ma zatem osobną sekcję „Orientacja z danych pomiarowych · pole detektora (archiwum)” i jawny komunikat o braku podłączonej orientacji korpusu na żywo.
+The arrow represents selected RA/Dec, not telescope attitude telemetry. ICRS-to-orbit direction is approximate, excluding precession/nutation. Occultation uses a spherical Earth; an unobstructed ray does not establish observability because Sun/shield/scheduling/instrument constraints are omitted. Coastlines use Natural Earth 110m.
 
-Odczyt korzysta z istniejącej, autoryzowanej analizy metadanych wybranego FITS. `recordedPointing` zawiera ICRS w punkcie odniesienia CRPIX oraz kąty pozycyjne dodatnich osi X/Y detektora, mierzone na wschód od północy. Pozycja odniesienia nie jest środkiem wycinka i nie jest automatycznie wspólną osią optyczną teleskopu. Obliczenia wykonuje Astropy WCS z oryginalnego nagłówka, z konwersją współrzędnych do ICRS. Czas jest pobierany kolejno z DATE-AVG, DATE-OBS lub z jawnie oznaczonych metadanych archiwum, z uwzględnieniem TIMESYS. Kompas osi, dokładny czas, detektor i źródłowy FITS są widoczne w panelu.
+Recorded tests cover coordinate axes, normalized direction, ray/Earth intersections, TLE identity/checksums, cache and explicit fallback. UI checks exercised TLE loading, arrow changes and time pause/resume.
 
-Nie łączy się archiwalnego obrotu pola z aktualną pozycją orbitalną jako jednego pomiaru orientacji. Strzałka globu pozostaje zaplanowanym kierunkiem użytkownika. Podczas nawigacji ukryta animacja klatek jest zatrzymana lokalnie, aby nie zmieniać automatycznie ekspozycji używanej do odczytu orientacji. Test syntetyczny sprawdza przesunięty CRPIX, obrót 30° oraz priorytet czasu DATE-AVG.
+## Recorded field pointing versus live attitude
 
-### Przygotowanie FITS i cache projekcji
+No connected public live ADCS/quaternion stream was found in the sources checked during implementation. Attitude is not inferred from TLE or the selected target. Navigation therefore separates archival detector-field orientation from live orbital context and states that live body attitude is unavailable.
 
-Pobieranie wycinków działa z limitem czterech równoległych żądań IRSA. Kolejność manifestu pozostaje zgodna z wyborem; anulowanie zatrzymuje dalsze pobrania, a postęp nie cofa się przy odpowiedziach przychodzących w różnej kolejności. Zachowane są limit rozmiaru odpowiedzi, timeout i trzy próby. Zmiana kodu API wymaga ponownego uruchomienia procesu; nie należy restartować go w trakcie aktywnego przygotowania.
+Authorized FITS analysis produces `recordedPointing`: ICRS at CRPIX and positive detector X/Y position angles east of north. CRPIX is not necessarily the cutout center or common telescope boresight. Astropy WCS reads the original header and converts to ICRS. Time prefers DATE-AVG, then DATE-OBS, then labelled archive metadata, respecting TIMESYS. The UI shows an axis compass, time, detector and source FITS.
 
-Worker zapisuje wyrównane płaszczyzny w `data/cache/projections/` (lub `CACHE_ROOT/projections/`). Cache uwzględnia plik źródłowy, jego rozmiar i czas modyfikacji, RA/Dec, pole widzenia, rozmiar siatki oraz skrót kodu workera. Uszkodzony wpis jest przeliczany. Kontrast nadal jest wyznaczany dla bieżącego wyboru zdjęć; analizy naukowe korzystają z oryginalnych FITS. Zapis cache jest atomowy i nie wykorzystuje pickle.
+Archival field rotation is not combined with current orbit as one attitude measurement. The globe arrow remains the selected direction. Hidden sky playback pauses locally in navigation to keep the inspected exposure stable. A synthetic case checks displaced CRPIX, 30° rotation and DATE-AVG precedence.
 
-Pomiar lokalny na 20 zapisanych rzeczywistych wycinkach: 19 poprawnych klatek, 1,545 s pierwszego przetwarzania i 0,162 s powtórzenia; wynikowe PNG identyczne bajtowo. Pomiar nie obejmuje transferu IRSA ani startu interpretera i nie stanowi gwarancji przyspieszenia całego zadania.
+## Cutout concurrency and projection cache
 
-### Czas sceny a ekspozycje FITS
+Four concurrent IRSA downloads preserve requested manifest ordering. Cancellation stops further retrieval; progress does not move backwards when requests finish out of order. Response limits, timeouts and three attempts remain enforced. Do not restart an API process while it is preparing a sequence.
 
-Kliknięcie pola w archiwalnej siatce zatrzymuje zegar sceny na wybranej ekspozycji. Worker odczytuje `DATE-AVG` z uwzględnieniem `TIMESYS`, `SGT_LAT_MIDPT`, `SGT_LON_MIDPT`, promień geocentryczny z normy `X_SC/Y_SC/Z_SC` oraz opcjonalną wartość prędkości z `VX_SC/VY_SC/VZ_SC`. Pozycję wyświetlamy z wykorzystaniem kulistego modelu Ziemi i zapisanego śladu naziemnego; nie traktujemy surowych współrzędnych inercjalnych jako ECF. Jeśli FITS zawiera także VX_SC/VY_SC/VZ_SC, wyznaczamy elipsę oskulacyjną w modelu dwuciałowym. Pozycja i cały tor korzystają z tej samej ramy i czasu Ziemi; punkt środka toru jest identyczny z pozycją satelity. Minimalna korekta obrotowa kotwiczy przybliżoną transformację osi niebieskich do śladu naziemnego FITS w kulistym modelu Ziemi. Model pomija J2, opór atmosferyczny i inne perturbacje, nie stanowi dokładnej efemerydy. Propagacja jest ograniczona do ±3 godzin od ekspozycji. Bez poprawnego wektora prędkości lub przy niepoprawnych elementach ślad pozostaje ukryty. „Now” / „Teraz” wraca do bieżącej prognozy TLE/SGP4.
+Projected planes are cached under `CACHE_ROOT/projections/` (default `data/cache/projections/`). Keys include source path/size/mtime, coordinates, field, grid and worker-code hash. Corrupt entries are recomputed. Contrast is recalculated for the selected sequence; scientific analyses use original FITS. Writes are atomic and do not use pickle.
 
-Puste pole wybiera czas kolumny oraz dostępną ekspozycję innego pasma z dokładnie tego samego czasu archiwalnego. Interfejs wskazuje brak zdjęcia w klikniętym paśmie i pasmo użyte do odczytu pozycji. Brak danych pozycyjnych nie jest zastępowany etykietą prawdziwej pozycji: pozostaje jawny schemat poglądowy.
+A local benchmark on 20 cached real cutouts produced 19 valid frames: 1.545 seconds first processing and 0.162 seconds repeated processing, with byte-identical PNGs. These figures exclude IRSA transfer and interpreter startup and do not guarantee whole-job speedup.
 
-### Język interfejsu
+## Scene time and archival exposure position
 
-Domyślny język to EN. Przycisk EN/PL w nagłówku zmienia język bez resetowania wybranej klatki, kanałów ani czasu sceny; wybór jest zapisywany pod kluczem `spherex-language` w localStorage. Katalog `apps/web/src/shared/i18n/translations.en.ts` zawiera tłumaczenia polskich kluczy i parametryzowanych komunikatów. Treści wpisane przez użytkownika i historia rozmowy nie są automatycznie tłumaczone.
+Clicking an archival grid cell freezes scene time at the exposure. The worker reads DATE-AVG/TIMESYS, `SGT_LAT_MIDPT`, `SGT_LON_MIDPT`, radius from `X_SC/Y_SC/Z_SC`, and optional speed from `VX_SC/VY_SC/VZ_SC`. Position uses a spherical Earth and the recorded ground location; raw inertial coordinates are not treated as Earth-fixed.
+
+When a valid velocity vector exists, a two-body osculating ellipse uses the same frame/Earth time as the displayed position. Its central point matches the spacecraft marker. A minimal rotational correction anchors the approximate celestial transform to the recorded ground location. J2, drag and other perturbations are omitted; this is not a precision ephemeris. Propagation is limited to ±3 hours from exposure. Invalid/missing velocity or elements hide the trajectory. “Now” returns to TLE/SGP4.
+
+An empty grid cell can use another band's exposure at exactly the same archival time, identifying the missing requested band and the source actually used. Missing position information remains a labelled illustration, never a fabricated actual position.
+
+## Interface language
+
+English is the default. EN/PL switches language without resetting frame, channels or scene time. The choice is saved as `spherex-language` in localStorage. `apps/web/src/shared/i18n/translations.en.ts` translates Polish source keys and parameterized messages. User-entered text and past conversation are not automatically translated.
+
+## Later source additions
+
+The current tree also includes Gaia DR3 overlays, AllWISE comparisons, CADC/NEOSSat coverage queries, cleanup and optional private object-storage persistence. Their behavior and limits are documented in the [README](../README.md). Their presence in source does not assert that every integration has been exercised in the public deployment.

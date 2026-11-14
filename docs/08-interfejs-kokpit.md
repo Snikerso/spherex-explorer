@@ -1,122 +1,76 @@
-# Interfejs — nowoczesny kokpit
+# Interface — observation cockpit
 
-## Kierunek zaakceptowany przez użytkownika
+## Design direction
 
-Interfejs inspirowany kokpitem nowoczesnego kosmicznego myśliwca w klimacie X-winga. Punktem odniesienia jest szkic użytkownika: duży centralny ekran, boczne konsole oraz dolny panel obsługi. Całość ma sprawiać wrażenie stanowiska pilota prowadzącego obserwację nieba.
+The author chose a modern spacecraft-cockpit layout: a large central image, side consoles and a lower control area, based on a personal sketch. The original inspiration was an X-wing-like viewing station. This is an independent data-exploration application, not an official mission-operations console.
 
-Układ i stylistyka są wymaganiem użytkownika. Poniższe kolory, proporcje i nazwy komponentów stanowią propozycję wykonania. Makieta poglądowa służy ocenie wyglądu; przedstawione na niej gwiazdy, wartości i komunikaty są ilustracyjne. Obserwacje w działającej aplikacji pochodzą z IRSA.
+The sketch establishes layout; colors, proportions and component names below are design guidance rather than proof of implemented accessibility/performance. Real application observations come from IRSA.
 
-## Materiały projektowe
+## Design references
 
-![Poglądowa makieta nowoczesnego kokpitu SPHEREx Explorer](assets/kokpit-koncepcja-v1.png)
+- [Author's sketch](assets/kokpit-szkic.jpg).
+- [AI-generated concept mockup](assets/kokpit-koncepcja-v1.png), produced with imagegen using the sketch as reference.
+- Original prompt records: [generation](assets/kokpit-prompt.txt) and [correction](assets/kokpit-prompt-korekta.txt). These historical prompt files retain their original wording.
 
-- [Szkic użytkownika](assets/kokpit-szkic.jpg).
-- [Makieta w pełnej rozdzielczości](assets/kokpit-koncepcja-v1.png), wygenerowana wbudowanym narzędziem imagegen z referencją do szkicu.
-- Dokładne prompty: [generowanie makiety](assets/kokpit-prompt.txt) oraz [korekta przykładowych wartości i listy obserwacji](assets/kokpit-prompt-korekta.txt).
+The mockup contains illustrative stars, values and messages. It is not a screenshot of real observations. Treat it as an AI-generated design asset; label it visibly before including it in submitted media. It is linked rather than embedded here to avoid presenting it as a finished scientific view.
 
-Makieta przedstawia kierunek stylistyczny. Lista kontrolek i ich zachowanie z dalszej części dokumentu są specyfikacją implementacji, również dla elementów niewidocznych na obrazie. Język angielski na makiecie jest przykładowy; aplikacja zachowuje planowaną obsługę PL/EN.
-
-## Kompozycja desktopowa
+## Layout
 
 ```text
-┌───────────────────────────────────────────────────────────────────────────┐
-│ SPHEREx EXPLORER     obiekt / współrzędne      status danych     PL / EN   │
-├──────────────┬─────────────────────────────────────────┬──────────────────┤
-│ NAWIGACJA    │                                         │ INSTRUMENTY      │
-│ Obiekt       │           GŁÓWNY EKRAN NIEBA             │ Tryb obrazu      │
-│ RA / Dec     │                                         │ Metadane         │
-│ Pole / daty  │       obraz / blink / porównanie A/B     │ Zaznaczony punkt │
-│ Szukaj       │                                         │ Notatka          │
-│ Obserwacje   │                                         │ Źródła / jakość  │
-├──────────────┼─────────────────────────────────────────┼──────────────────┤
-│ STATUS       │       OŚ CZASU + PLAY / PAUSE + TEMPO    │ OPERACJE         │
-│ źródło       ├─────────────────────────────────────────┤ postęp / anuluj  │
-│ wydanie      │ COPILOT: rozmowa i polecenie tekstowe    │ zapis / link     │
-└──────────────┴─────────────────────────────────────────┴──────────────────┘
+Header: project / source status / language / UTC
+Navigation     | Main image, A/B or globe | Instruments / metadata
+Search & list  | Zoom, selection, RGB     | Quality / notes
+Timeline: previous / play-pause / next / frame / speed
+Copilot: request, conversation, operation status, Stop
 ```
 
-Na szerokim ekranie: lewa konsola około 240 px, prawa około 260 px, środek zajmuje pozostałą szerokość. Centralny obraz jest największym elementem. Dolna konsola zajmuje około 180–240 px wysokości i może się rozszerzać na żądanie. To wartości startowe, do sprawdzenia na rzeczywistych kontrolkach.
+The image should dominate. Original desktop guidance allocated approximately 180–240 px to the expandable lower console; actual space must be checked with real controls. Decorative outer corners may be angled, while images, text and forms remain rectangular and unobstructed. A fullscreen viewer can maximize the data region.
 
-Zewnętrzna rama może mieć ścięte narożniki i lekko ukośne krawędzie jak na szkicu. Wewnętrzny obraz, tekst i formularze zachowują prostą geometrię. Ozdobna rama nie zasłania pikseli obserwacji ani nie przechwytuje kliknięć. Widok pełnoekranowy pozwala powiększyć sam obszar danych.
-
-## Podział funkcji
-
-| Panel | Zawartość i kontrolki |
+| Area | Content |
 | --- | --- |
-| Górny pasek | Nazwa aplikacji, bieżący obiekt, rzeczywisty stan połączenia i tryb live/demo, język |
-| Lewa konsola „Nawigacja” | Przykłady obiektów, RA/Dec, rozmiar pola, daty, wyszukiwanie; lista obserwacji z checkboxami i „Przygotuj sekwencję” |
-| Centralny ekran | Obraz i znaczniki, skala kątowa, orientacja, daty klatek, zoom +/−, przesuwanie, „Dopasuj obraz”; tryb A/B ze wspólnym zoomem |
-| Prawa konsola „Instrumenty” | Przełącznik pojedynczy/blink/A/B, filtry spektralne z opisem zgodności, metadane, jakość danych i źródła |
-| Prawa konsola „Zaznaczenie” | Współrzędne klikniętego punktu, „Wyczyść”, tekst i zapis notatki, lista notatek |
-| Dolna oś czasu | Wybór klatki, poprzednia/następna, play/pause i tempo; widoczne daty i nierówne odstępy czasu |
-| Dolna konsola „Copilot” | Historia czatu, pole wpisywania polecenia, „Wyślij”, „Stop”, stan narzędzi; rozwijany pełny zapis rozmowy |
-| Panel operacji | Postęp przygotowania, „Anuluj”, ponowienie błędu, „Udostępnij widok” |
+| Header | Project, target, actual connection/source state, language |
+| Navigation | Examples, RA/Dec, field size, dates, releases, search and observation selection |
+| Main view | Images, markers, scale/orientation, dates, zoom/pan, fit and synchronized A/B |
+| Instruments | View mode, spectral context, provenance and quality |
+| Selection | Sky position, clear selection, note input and saved notes |
+| Timeline | Frame position, previous/next, play/pause, speed and uneven-time information |
+| Copilot | Messages, input, send/stop and tool progress |
+| Operation status | Preparation progress, cancellation, retry and coordinate links |
 
-Każde narzędzie agenta ma odpowiednik ręczny: wybór celu, wyszukiwanie, przygotowanie sekwencji, ustawienie widoku i odtwarzania, wybór punktu oraz zapis adnotacji. Powodzenie operacji aktualizuje wspólny stan, niezależnie od tego, czy uruchomił ją użytkownik przyciskiem czy agent.
+The current navigation tab also provides a 3D globe. WebGL is used for this feature, not as a requirement for rendering every cockpit control.
 
-## Zmiany agenta pozostają edytowalne
+## Editable copilot actions
 
-To wymaganie użytkownika: po działaniu agenta wszystkie odpowiadające mu kontrolki pokazują nowe wartości i pozwalają je dalej zmieniać ręcznie. Nie tworzymy oddzielnego, ukrytego zestawu ustawień dla czatu.
+Every core agent operation has a manual counterpart. Search updates visible coordinates/dates; preparation updates observation selection; view/playback tools update mode, frames and speed; notes use the same selected point.
 
-| Agent wykonuje | Użytkownik widzi i może poprawić |
+The user can change 2 fps to 1 fps, edit dates or deselect observations. Speed applies immediately; dates require Search and selection requires preparation. Distinguish the displayed sequence's actual parameters from an edited form. Optional brief highlighting may identify copilot changes, but values remain ordinary editable controls.
+
+Preserve local input drafts and reject late changes based on stale revisions. On refresh restore committed settings. Read fresh state before the next agent run, including manual corrections.
+
+## Visual guidance
+
+| Element | Original design token |
 | --- | --- |
-| Wyszukuje wskazany obiekt i okres | Nazwę celu, RA/Dec, pole i daty wpisane w formularzu |
-| Wybiera obserwacje do sekwencji | Zaznaczone checkboxy tych obserwacji |
-| Włącza porównanie | Aktywny przełącznik blink/A/B i wybrane klatki |
-| Zmienia tempo lub zatrzymuje odtwarzanie | Aktualną wartość suwaka oraz stan play/pause |
-| Korzysta z zaznaczonego punktu i zapisuje notatkę | Ten sam znacznik i nową pozycję na liście notatek |
+| Background | Graphite `#080D14` |
+| Console / raised surface | `#111B28` / `#192638` |
+| Borders | Steel `#33465E` |
+| Active/focus | Cyan `#5DDDEB` |
+| Warnings | Amber `#F6B85A` |
+| Main / secondary text | `#E8F0F8` / `#A5B6C9` |
+| Error | `#FF818A`, plus icon and description |
 
-Użytkownik może np. zmniejszyć tempo z 2 do 1 klatki/s albo zmienić wybrany zakres dat. Tempo działa od razu; zmienione daty czekają na „Szukaj”, a wybór obserwacji na „Przygotuj sekwencję”. Widok jasno odróżnia parametry wyświetlanych obrazów od zmienionego formularza.
+Actual theme variables can evolve. Use readable sans-serif for interaction/chat and monospace for coordinates/dates/numbers. The data palette stays independent of the cockpit palette. Markers should be hideable. The project icon uses six abstract spectral bars; do not reintroduce a NASA-like round badge, swoosh or altered NASA lettering. Tagline: **EXPLORE NASA SPHEREx OPEN DATA**.
 
-Pola zmienione przez agenta mogą otrzymać krótkie, subtelne podświetlenie i opis „Zmienione przez copilota”. Oznaczenie znika po chwili; aktualne wartości pozostają. Użytkownik nie musi zatwierdzać samego faktu, że kontrolki odzwierciedlają wykonaną operację.
+## Motion and accessibility
 
-Ręczna edycja ma ochronę przed spóźnionym wynikiem agenta: niedokończony wpis nie znika, a nowszych wartości nie zastępuje starsza operacja. Po odświeżeniu strony kontrolki odtwarzają ostatni zatwierdzony stan. Przy kolejnym poleceniu agent dostaje aktualne ustawienia, wraz z ręcznymi poprawkami.
+Use brief transitions around 120–180 ms and respect reduced-motion preferences. Show real loading stages and elapsed time when a percentage is unknown. Playback starts deliberately and pause remains available. Avoid decorative flicker, scanlines, fake radar readings and unrequested sound.
 
-## Styl wizualny
+Original responsive targets: full side consoles around 1440 px, collapsible panels below about 1280 px, and separate tabs on phones. Validate actual styles rather than treating these as exact implemented breakpoints. Do not scale the entire desktop cockpit down to fit mobile.
 
-| Element | Propozycja |
-| --- | --- |
-| Tło aplikacji | Prawie czarny grafit `#080D14` |
-| Konsole | Ciemny granat `#111B28`; podniesiona powierzchnia `#192638` |
-| Obramowania | Stalowy `#33465E`, cienkie linie, delikatny cień i punktowe rozjaśnienie krawędzi |
-| Akcent sterowania | Cyjan `#5DDDEB`: aktywny panel, fokus, zaznaczenie |
-| Akcent ostrzegawczy | Bursztynowy `#F6B85A`: ograniczenia danych, niezgodność i operacje wymagające uwagi |
-| Tekst | Główny `#E8F0F8`, pomocniczy `#A5B6C9` |
-| Błąd | Czerwony `#FF818A`, zawsze z ikoną i opisem |
-| Typografia | Czytelny sans-serif do interakcji i czatu; monospace do RA/Dec, dat oraz wartości liczbowych |
-| Kształty | Zewnętrzne ścięcia ram, zwarte przełączniki, oszczędne podziały sekcji; formularze z czytelnymi etykietami |
+Controls need accessible names, keyboard operation and visible focus. Do not communicate status solely by color. Original text-size goals were at least 14 px for body text and preferably 16 px for chat; verify contrast and zoom with the final theme. Player shortcuts must not interfere with text entry.
 
-Cyjan i bursztyn dotyczą kontrolek. Paleta wizualizacji danych astronomicznych pozostaje niezależna od motywu kokpitu. Znacznik wybranego punktu można ukryć, aby nie zasłaniał obiektu.
+## Implementation and acceptance
 
-## Ruch i informacja zwrotna
+Use CSS Grid, CSS/SVG decoration and canvas where image composition needs it; keep forms/chat in the DOM. A raster concept image must not become a fake interactive background. React components receive explicit state/props; orbital math and GPU lifetime handling remain separate.
 
-- Krótkie przejścia aktywnego przycisku i panelu, około 120–180 ms; respektować `prefers-reduced-motion`.
-- Ładowanie ma rzeczywisty stan: wyszukiwanie → pobieranie → przygotowanie → gotowe. Gdy procent jest nieznany, pokazywać etap i upływ czasu.
-- Animacja nieba startuje po świadomym poleceniu; pauza pozostaje zawsze dostępna.
-- Bez ciągłego migotania, efektu uszkodzonego ekranu, scanlines i dekoracyjnego radaru udającego pomiar.
-- Dźwięki interfejsu nie należą do MVP. Domyślnie aplikacja jest cicha.
-
-## Responsywność i dostępność
-
-- Od około 1440 px: pełny kokpit z dwiema konsolami bocznymi.
-- Poniżej około 1280 px: panele boczne zwijane do zakładek, większa powierzchnia obrazu.
-- Na telefonie: obraz, obserwacje, copilot i szczegóły jako przełączane zakładki; dolny pasek odtwarzania pozostaje pod ręką. Dekoracja kokpitu jest uproszczona.
-- Pola tekstowe i przyciski mają standardowe zachowanie, widoczny fokus, nazwy dostępne dla czytników i obsługę klawiaturą. Żadna informacja nie jest kodowana wyłącznie kolorem.
-- Tekst podstawowy co najmniej 14 px, czat najlepiej 16 px; nie pomniejszać danych, aby zmieścić ozdobne elementy. Kontrast oraz powiększenie strony wymagają weryfikacji przy implementacji.
-- Pole czatu przechwytuje skróty tylko podczas wpisywania; skróty odtwarzacza nie zakłócają pisania.
-
-## Wskazówki do React
-
-Docelowe komponenty: `CockpitShell`, `NavigationConsole`, `ObservationViewport`, `InstrumentConsole`, `TimelineControls`, `CopilotConsole`, `OperationStatus` i `AnnotationPanel`.
-
-Układ wykonać CSS Grid, ozdobne krawędzie CSS/SVG, obrazy Canvas. Tekst, formularze i czat pozostają elementami DOM. Tokeny kolorów i odstępów zdefiniować jako zmienne CSS. Efekty świetlne są delikatne i nie wpływają na naukowy obraz. Pełny kokpit nie wymaga sceny WebGL ani trójwymiarowego modelu statku.
-
-Makieta rastrowa nie stanowi tła dla całej aplikacji: kontrolki muszą być rzeczywistymi komponentami, responsywnymi i dostępnymi.
-
-## Kryteria odbioru wyglądu
-
-1. Rozpoznawalny układ ze szkicu: główny ekran, boczne konsole i dolny panel.
-2. Największą uwagę przyciąga obserwacja; etykiety i daty pozostają czytelne.
-3. Cały główny scenariusz można przejść ręcznie i przez czat; oba sposoby pokazują ten sam stan.
-4. Ładowanie, puste wyniki, błąd i anulowanie mają dopracowane widoki w motywie kokpitu.
-5. Na małym ekranie i przy powiększeniu strony kontrolki pozostają dostępne, bez ściskania desktopowego kokpitu.
+Acceptance requires readable dates and sources, working manual and conversational paths sharing state, polished empty/error/cancel states, protection of newer edits, and usable small-screen/zoom/keyboard layouts. The existence of a mockup alone satisfies none of these interaction criteria.

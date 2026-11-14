@@ -1,62 +1,43 @@
-# Architektura i przepływ danych
+# Architecture and data flow
 
-## Proponowany stos
+## Components
 
-| Warstwa | Wybór | Zadanie |
+| Layer | Implementation | Responsibility |
 | --- | --- | --- |
-| Frontend | React + TypeScript + Vite | Formularze, czat, odtwarzacz Canvas, synchronizacja widoków |
-| Stan UI | Zustand; TanStack Query dla REST | Oddzielenie stanu widoku od danych serwera |
-| Backend | NestJS + TypeScript | REST, SSE, sesje, walidacja, integracje |
-| Agent | `@openai/agents` + Zod | Polecenia tekstowe i wywoływanie funkcji backendu |
-| Baza | MongoDB Atlas Free + Mongoose (`@nestjs/mongoose`) | Kolekcje sesji, wyszukiwań, zadań, sekwencji i adnotacji; obrazy poza bazą |
-| Obrazy | Proces pomocniczy Python: Astropy + reproject + NumPy | FITS, WCS i przygotowanie wspólnej siatki klatek |
-| Pliki | Wolumen lokalny w MVP; adapter do magazynu obiektowego później | Cache FITS oraz podglądy PNG/WebP |
-| Repozytorium | Monorepo pnpm | Wspólne kontrakty i jedna konfiguracja CI |
+| Frontend | React, TypeScript, Vite | Search, image workspace, chat and shared controls |
+| UI state | React feature hooks and API state | Draft input, playback, composition and committed session state |
+| Backend | NestJS, TypeScript | REST, SSE, validation, ownership and integrations |
+| Copilot | `@openai/agents`, Zod | Natural-language requests and domain tools |
+| Database | MongoDB replica set, Mongoose | Sessions, views, searches, jobs, sequences, notes and history |
+| Imaging | Python, Astropy, reproject, NumPy | FITS, WCS, common-grid images and exploratory analysis |
+| Files | Local cache; optional private S3-compatible storage | FITS, PNG, radiance arrays and manifests |
+| Repository | pnpm monorepo | Shared contracts and verification commands |
 
-React, NestJS, MongoDB i Agents SDK są wymaganiami użytkownika. Pozostałe elementy to proponowane decyzje. NestJS łączy się z MongoDB przez `MongooseModule`; schematy dokumentów, walidacja i indeksy są definiowane w modułach backendu. [NestJS: MongoDB i Mongoose](https://docs.nestjs.com/techniques/mongodb).
-
-Użytkownik wybrał MongoDB Atlas na darmowym planie. Własny lokalny replica set jest opcją developerską; w Atlas replikacją zarządza dostawca. Gotowa konfiguracja szkieletu i granice obecnej implementacji: [uruchomienie i Atlas](11-uruchomienie-i-atlas.md).
-
-Pomocniczy Python obsługuje wyłącznie obrazy; całe publiczne API i agent pozostają w NestJS. Astropy udostępnia transformacje WCS, a reproject reprojekcję danych astronomicznych. [Astropy WCS](https://docs.astropy.org/en/stable/wcs/), [reproject](https://docs.astropy.org/projects/reproject/en/stable/).
-
-Powód tej propozycji: poprawne porównanie FITS wymaga interpretacji współrzędnych i metadanych. Jeżeli projekt ma używać wyłącznie TypeScript, zadanie D03 musi najpierw potwierdzić alternatywną bibliotekę FITS/WCS na rzeczywistych danych.
+Earlier proposals included Zustand/TanStack Query and leased distributed workers; do not treat those as implemented dependencies. Python handles numerical imaging; the public API and agent remain in NestJS. Atlas manages its own replication; local development can use a single-node replica set.
 
 ```mermaid
 flowchart LR
-  U[Użytkownik] --> R[React: obrazy i czat]
-  R -->|REST i SSE| N[NestJS]
+  U[User] --> R[React workspace]
+  R -->|REST and SSE| N[NestJS API]
   N --> A[OpenAI Agents SDK]
-  A -->|narzędzia aplikacji| S[Serwisy domenowe NestJS]
-  S --> I[IRSA: wyszukiwanie i cutouts]
-  S --> W[Proces FITS i WCS]
+  A -->|Structured tools| S[Domain services]
+  S --> I[IRSA search and cutouts]
+  S --> W[Python FITS and WCS]
   N --> P[(MongoDB)]
-  W --> C[(Cache plików)]
-  N -->|zdarzenia i podglądy| R
+  W --> C[(Local file cache)]
+  S --> O[(Optional private object storage)]
+  N -->|Events and authorized previews| R
 ```
 
-## Moduły i struktura docelowa
+## Repository structure
 
-```text
-apps/
-  web/src/           # features: search, viewer, timeline, chat, annotations
-  api/src/modules/   # sessions, observations, sequences, jobs, agent, shares, health
-packages/
-  contracts/         # schematy Zod i typy REST/SSE
-  config/            # konfiguracja TypeScript, lintowania
-workers/
-  imaging/           # kod Python, testy WCS i renderowania
-data/
-  manifests/         # małe manifesty pochodzenia zestawów demo
-docs/
-```
+`apps/web` contains feature-based UI modules. `apps/api/src/modules` contains domain services, agent, catalogues, storage and maintenance. `packages/contracts` owns Zod/TypeScript contracts. `workers/imaging` contains Python processing and tests. `config/spherex-releases.json` defines supported Level 2 releases. Large FITS, private configuration and keys stay out of Git. Demonstration datasets need source manifests and reproducible preparation.
 
-Duże FITS i klucze nie trafiają do Git. Zestawy demo mają manifest oraz odtwarzalny skrypt przygotowania.
+## Archive access
 
-## Integracja archiwum
+Search uses IRSA SIA2; cutouts use the archive service. Releases are explicit and never merged automatically. The current release catalogue configures DR1 and QR3; it is the application source of truth rather than an assertion that these are the only releases available externally.
 
-SPHEREx udostępnia obecnie wydania QR2 i QR3. Wyszukiwanie obrazów prowadzi przez SIA2, a pliki można przycinać usługą IRSA. Adapter zapisuje wydanie w każdym wyniku i nie łączy wydań automatycznie. [IRSA SPHEREx](https://irsa.ipac.caltech.edu/Missions/spherex.html), [IRSA Data Access](https://caltech-ipac.github.io/spherex-archive-documentation/spherex-data-access/).
-
-Przykładowy kształt zapytania adaptera; współrzędne są przykładowym centrum, nie potwierdzoną aktualną pozycją obiektu:
+Example query shape (illustrative center, not a confirmed current target position):
 
 ```text
 GET https://irsa.ipac.caltech.edu/SIA
@@ -65,40 +46,34 @@ GET https://irsa.ipac.caltech.edu/SIA
   &RESPONSEFORMAT=VOTABLE
 ```
 
-Promień `POS` jest w stopniach; `fovDeg` aplikacji oznacza szerokość kwadratowego pola. Adapter oblicza obszar wyszukiwania obejmujący narożniki pola. Wyniki normalizuje do kontraktów aplikacji. Schemat odpowiedzi i dokładne filtrowanie spektralne należy sprawdzić w D01; nie zakładać istnienia pola „band” w dowolnym formacie.
+The SIA circle radius is in degrees; application `fovDeg` is the square field width. The adapter searches a region covering the field corners and normalizes metadata into application contracts. It preserves source identifiers, release, calibration information, times and time scales, detectors, spectral ranges, coverage and URLs. Reprocessed duplicates should not become fake epochs: observation time, not publication time, defines ordering.
 
-Źródłowy `access_url` służy do pobrania FITS. Dla dozwolonych adresów archiwum backend buduje żądanie wycinka z centrum i rozmiarem. FITS z wieloma rozszerzeniami nie jest gotowym obrazkiem dla przeglądarki. [Dokumentacja cutout](https://irsa.ipac.caltech.edu/data/SPHEREx/docs/cutout_tool.html).
+Source URLs are restricted to approved HTTPS archive paths. The backend constructs cutout requests; a multi-extension FITS file requires numerical interpretation before browser display. See [archive access](https://caltech-ipac.github.io/spherex-archive-documentation/spherex-data-access/) and [cutouts](https://irsa.ipac.caltech.edu/data/SPHEREx/docs/cutout_tool.html).
 
-## Przygotowanie sekwencji
+## Image preparation
 
-1. Zweryfikować RA w `[0,360)`, Dec w `[-90,90]`, dodatni rozmiar pola i kolejność dat. Współrzędne wejściowe: ICRS w stopniach; czas wejściowy: ISO 8601 UTC.
-2. Wyszukać metadane. Zachować oryginalny identyfikator, wydanie, wersję kalibracji, pokrycie, detektor, zakres spektralny, czas i jego skalę.
-3. Odrzucić powtórzenia tego samego produktu po ponownym przetworzeniu. Kolejne epoki ustalać według czasu obserwacji, nie czasu publikacji.
-4. Wybrać porównywalne pokrycie spektralne i odrębne czasy; UI opisuje grupę, której używa. Sam numer detektora nie wystarcza jako dowód zgodności długości fali.
-5. Pobrać ograniczone wycinki, odczytać właściwe rozszerzenia obrazu, maski jakości, niepewności i WCS. Brak niezbędnego WCS blokuje porównanie.
-6. Przeprojektować klatki na tę samą siatkę nieba, rozmiar i orientację. Zachować maskę brakującego pokrycia; puste piksele nie są zerowym strumieniem.
-7. Ustalić wspólne granice i funkcję rozciągania jasności dla całej sekwencji. Indywidualne skalowanie klatek może służyć do oglądania, ale musi być oznaczone.
-8. Wygenerować podglądy i manifest parametrów. Dopiero wtedy zwrócić stan `ready` i zezwolić na animację.
+1. Validate ICRS degree coordinates: RA `[0,360)`, Dec `[-90,90]`, field size and UTC date order.
+2. Query metadata and retain provenance, distinct products, timestamps and release.
+3. Select observations and retrieve size/time-limited FITS cutouts.
+4. Read image, ZODI, variance, flags, spatial WCS and spectral WCS.
+5. Subtract ZODI and reproject onto a common TAN grid; preserve missing coverage.
+6. Apply shared contrast for the selected sequence and produce PNG/radiance assets.
+7. Persist the manifest and assets before marking the sequence ready.
 
-SPHEREx używa filtrów o zmiennej długości fali: nie projektować danych jako 102 gotowych, jednoczesnych zdjęć każdego miejsca. Dla MVP akceptować tylko klatki z ustaloną tolerancją pokrycia spektralnego. Tolerancję, maskowanie i wybór HDU dokumentuje eksperyment D02/D03, a nie model językowy. [IRSA: opis obserwacji i pasm](https://irsa.ipac.caltech.edu/onlinehelp/spherex/spherex/overview.html).
+The current `tan-all-wavelengths-multiband-v5` playback keeps readable observations covering the field center across wavelengths, with per-frame coverage. Earlier versions selected a spectrally matched subset. A detector is not one exact wavelength; SPHEREx variable filters do not provide 102 simultaneous images everywhere. Current dates/wavelengths and warnings are essential to interpretation. See the [integration report](12-integracja-live.md) for quality policy and analysis behavior.
 
-## Wykonywanie zadań
+Empty coverage is not zero flux. Reprojection/shared contrast alone do not establish photometric comparability, matched PSFs, or a confirmed moving object.
 
-W MVP zadania są dokumentami w kolekcji `jobs` w MongoDB. Worker przejmuje zadanie atomowym `findOneAndUpdate`, sprawdzając status i termin lease, a następnie zapisując właściciela, nowy `leaseToken` i `leaseUntil`. Uruchamia stały program Python z argumentami jako tablica i zapisuje rezultat. Bez poleceń shell generowanych z wejścia użytkownika. Limit czasu, pamięci i rozmiaru plików obowiązuje również dla procesu potomnego.
+## Jobs and concurrency
 
-Stany: `queued → running → ready | failed | cancelled`. Zadanie ma lease/heartbeat; po restarcie osierocony `running` wraca do kolejki albo kończy się błędem. Heartbeat i zapis rezultatu wymagają zgodnego `leaseToken`, aby stary worker nie nadpisał wyniku po ponownym przejęciu zadania. Wyniki trafiają pod tymczasową nazwę i są publikowane atomowo. Ponowienie nie tworzy duplikatu sekwencji.
+The implemented preparation queue is local and requires one API process. Jobs persist status and progress; restart fails orphaned unfinished work explicitly. States are `queued → running → ready | failed | cancelled`. The browser polls preparation status while chat can finish independently. Cancellation propagates to downloads and child processing. Worker programs and argument arrays are fixed by the application, not shell commands supplied by a model.
 
-Przeglądarka odpyta status przygotowania co 1–2 s; strumień czatu nie czeka na wielominutowe przetwarzanie. Agent dostaje `jobId`, a UI samo otwiera wynik zadania przypisanego do żądania. Kolejka Redis/BullMQ jest rozszerzeniem przy większej skali.
+The original scalable design proposed atomic MongoDB job claims using `findOneAndUpdate`, lease ownership, heartbeat, `leaseToken`/`leaseUntil`, token-checked completion and retries. This remains a design for future distributed execution; do not scale the current API horizontally on that assumption. Output publication should remain atomic and retries should not duplicate sequence results.
 
-## Cache i limity startowe
+## Limits and caching
 
-To wartości projektowe do sprawdzenia po pomiarach:
+Current search returns at most 500 products; the former 24-frame preparation limit has been removed. Preview grids are 256×256. FOV accepts up to 2°, but large live cutouts remain subject to archive availability; larger fields are not mosaics. Downloads allow four concurrent requests, with response-size limits, timeouts and retries. The recorded large-field limit is 128 MiB above 0.5° versus 32 MiB for smaller cutouts.
 
-- Pole 0,1° domyślnie, maksymalnie 0,5°; maksymalnie 24 klatki, domyślnie 8.
-- Podgląd do 512 × 512 px; jedno aktywne przygotowanie i jeden agent run na sesję.
-- Wyszukiwanie do 20 s; przygotowanie do 120 s; najwyżej 2 ponowienia przejściowego błędu z opóźnieniem.
-- Cache metadanych 15 min; plików 7 dni z limitem miejsca i usuwaniem najdawniej używanych.
-- Klucz cache: identyfikator i wersja produktu + region + siatka + wybór spektralny + parametry renderowania + wersja pipeline.
-- Przekroczenie limitu wyników zwraca `truncated=true`; użytkownik zawęża zapytanie. Brak cichego pobrania całego przeglądu.
+Projection cache keys include source file identity/size/mtime, region, grid and worker-code hash. Corrupt cache entries are recomputed; scientific analyses use source FITS. Optional object storage keys FITS by the full cutout URL and persists sequence assets privately. Ownership is checked before serving assets. See [README](../README.md#cache-and-persistence) for cleanup and storage configuration.
 
-Różnicowanie obrazów i ilościowe pomiary wymagają dodatkowo zgodności kalibracji, jednostek, tła i PSF; są poza P0. Reprojekcja i wspólne skalowanie same nie gwarantują poprawnego pomiaru.
+Original planning values (0.5° maximum, 24 frames, 512×512 previews and a seven-day file cache) were estimates and are superseded by current contracts/configuration. Agent and image processing have separate bounds; a long-running image job must not hold a model transaction open.
