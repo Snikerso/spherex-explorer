@@ -16,6 +16,8 @@ function MissionPatch() {
     </svg>
   );
 }
+const astroStrategy = 'https://iceeye-explorer-9x76u.ondigitalocean.app';
+
 export function MissionHeader({ connected }: { connected: boolean }) {
   const language = useLanguage();
   const [now, setNow] = useState(() => new Date());
@@ -60,6 +62,21 @@ export function MissionHeader({ connected }: { connected: boolean }) {
       >
         {language.toUpperCase()}
       </button>
+      <select
+        className="mission-explorer-picker"
+        aria-label={language === 'en' ? 'Choose explorer' : 'Wybierz eksplorator'}
+        value="spherex"
+        onChange={(event) => {
+          const value = event.currentTarget.value;
+          if (value !== 'spherex') {
+            window.location.assign(value === 'iceeye' ? `${astroStrategy}/geoeye` : astroStrategy);
+          }
+        }}
+      >
+        <option value="astrostrategy">AstroStrategy</option>
+        <option value="iceeye">IceEye Explorer</option>
+        <option value="spherex">SPHEREx Explorer</option>
+      </select>
     </header>
   );
 }

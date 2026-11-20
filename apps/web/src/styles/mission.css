@@ -95,3 +95,25 @@ button.frame-source-image{display:block;width:100%;padding:0;border:1px solid tr
 .band-multiple .prepared-bands .band-availability th>button{min-height:12px;height:12px;padding:0 3px;font-size:9px}.band-multiple .prepared-bands .band-availability th>button[aria-pressed=true]{border:0;background:#224776}
 .availability-legend .rgb-key{font:700 8px ui-monospace,monospace}.key-r{color:#ff7288}.key-g{color:#73df9f}.key-b{color:#7caeff}.band-availability button.availability-cell.rgb-used{position:relative;border-color:#edf5ff;background:transparent;overflow:hidden}.cell-channels{display:flex;position:absolute;inset:0;pointer-events:none}.cell-channel{display:block;flex:1;height:100%}.cell-channel.channel-r{background:#f0647b}.cell-channel.channel-g{background:#51cb83}.cell-channel.channel-b{background:#619aff}.band-availability button.availability-cell.exposure-selected{outline:1px solid #fff;outline-offset:1px}.band-availability button.availability-cell:disabled{opacity:1;cursor:default}.recorded-pointing .band-availability{margin-top:8px}.recorded-pointing .band-availability th:first-child{background:#101b2c}.recorded-pointing .selected-exposure{margin:6px 0 0;color:#acc5e7;font-size:9px}.recorded-pointing .availability-legend{flex-wrap:wrap}.recorded-pointing .band-availability td,.recorded-pointing .band-availability th{line-height:10px}
 .mission-topbar button.language{display:inline-flex;align-items:center;justify-content:center;cursor:pointer;min-height:28px;min-width:34px;padding:5px 7px;background:#152540;color:#d9e9ff;border:1px solid #486797;font:700 10px ui-monospace,monospace;flex-shrink:0}.mission-topbar button.language:hover{background:#244a81}.mission-topbar button.language:focus-visible{outline:2px solid #a7caff;outline-offset:2px}
+
+.mission-topbar .mission-explorer-picker {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 147px;
+  min-height: 30px;
+  margin: 0 0 0 auto;
+  padding: 5px 7px;
+  border: 1px solid #486797;
+  border-radius: 5px;
+  background: #152540;
+  color: #e2eaff;
+  font: 12px Arial, sans-serif;
+}
+
+@media (max-width: 560px) {
+  .mission-topbar .mission-explorer-picker { min-width: 112px; font-size: 11px; }
+  .mission-topbar .mission-clock, .mission-topbar .connection { display: none; }
+  .mission-topbar .brand small { display: none; }
+  .mission-topbar .brand { min-width: 0; }
+  .mission-topbar .brand b { display: block; margin-left: 0; }
+}
