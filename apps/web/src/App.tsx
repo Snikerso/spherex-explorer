@@ -159,7 +159,7 @@ export function App() {
       </div>
       {job?.status === 'failed' && (
         <div className="job-status panel" role="alert">
-          △ {job.error?.message ?? t('Nie udało się przygotować obrazów. Spróbuj ponownie.')}
+          △ {t(job.error?.message ?? 'Nie udało się przygotować obrazów. Spróbuj ponownie.')}
         </div>
       )}
       <CopilotChat explorer={explorer} onSend={send} />

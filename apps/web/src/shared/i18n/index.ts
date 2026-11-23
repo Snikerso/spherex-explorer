@@ -3,10 +3,17 @@ import { english } from './translations.en';
 export type Language = 'en' | 'pl';
 const key = 'spherex-language';
 let language: Language = 'en';
+const entryUrl = typeof window === 'undefined' ? undefined : new URL(window.location.href);
+const englishEntry = entryUrl?.searchParams.get('lang') === 'en';
 try {
-  language = localStorage.getItem(key) === 'pl' ? 'pl' : 'en';
+  if (englishEntry) localStorage.setItem(key, 'en');
+  else language = localStorage.getItem(key) === 'pl' ? 'pl' : 'en';
 } catch {
   /* Storage is optional. */
+}
+if (englishEntry && entryUrl) {
+  entryUrl.searchParams.delete('lang');
+  window.history.replaceState(window.history.state, '', entryUrl);
 }
 const listeners = new Set<() => void>();
 if (typeof document !== 'undefined') document.documentElement.lang = language;
@@ -33,6 +40,12 @@ export function useLanguage() {
   );
 }
 const reverse = Object.fromEntries(Object.entries(english).map(([pl, en]) => [en, pl]));
+const nestedNotices = new Set(
+  ['Pominięto produkt {0}: {1}', 'Pobrano tylko {0} wycinków. {1}'].flatMap((source) => [
+    source,
+    english[source],
+  ]),
+);
 function templatePatterns(catalog: Record<string, string>) {
   return Object.entries(catalog)
     .filter(([source]) => /\{\d+\}/.test(source))
@@ -47,7 +60,12 @@ function templatePatterns(catalog: Record<string, string>) {
         cursor = match.index! + match[0].length;
       }
       pattern += source.slice(cursor).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      return { regex: new RegExp('^' + pattern + '$'), target, slots };
+      return {
+        regex: new RegExp('^' + pattern + '$'),
+        target,
+        slots,
+        nested: nestedNotices.has(source),
+      };
     });
 }
 const toEnglish = templatePatterns(english),
@@ -59,12 +77,14 @@ export function t(source: string, ...values: unknown[]): string {
   let translated =
     catalog[source] ?? (catalog[trimmed] ? source.replace(trimmed, catalog[trimmed]!) : source);
   if (translated === source && !values.length) {
-    for (const { regex, target, slots } of language === 'en' ? toEnglish : toPolish) {
+    for (const { regex, target, slots, nested } of language === 'en' ? toEnglish : toPolish) {
       const match = regex.exec(source);
       if (!match) continue;
       translated = target.replace(/\{(\d+)\}/g, (slot, index: string) => {
         const capture = slots.indexOf(Number(index));
-        return capture < 0 ? slot : match[capture + 1]!;
+        if (capture < 0) return slot;
+        const value = match[capture + 1]!;
+        return nested && index === '1' ? t(value) : value;
       });
       break;
     }

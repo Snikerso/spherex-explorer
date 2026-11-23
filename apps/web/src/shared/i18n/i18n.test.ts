@@ -45,3 +45,14 @@ it('translates stored preparation warnings with detector and observation identif
     ),
   ).toContain('Wavelength filtering is off.');
 });
+
+it('translates job failure details without changing the product identifier', () => {
+  const notice =
+    'Pobrano tylko 1 wycinków. Pominięto produkt Cel: Nie udało się pobrać wycinka IRSA (HTTP 503).';
+  const translated = t(notice);
+  expect(translated).toBe(
+    'Too few cutouts were downloaded (1). Skipped product Cel: Could not download the IRSA cutout (HTTP 503).',
+  );
+  setLanguage('pl');
+  expect(t(translated)).toBe(notice);
+});

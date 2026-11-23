@@ -1,4 +1,106 @@
 export const english: Record<string, string> = {
+  'Pominięto produkt {0}: {1}': 'Skipped product {0}: {1}',
+  'Pobrano tylko {0} wycinków. {1}': 'Too few cutouts were downloaded ({0}). {1}',
+  TY: 'YOU',
+  'MongoDB niedostępne.': 'MongoDB is unavailable.',
+  'Najpierw przygotuj sekwencję.': 'Prepare a sequence first.',
+  'Klatka nie należy do sekwencji.': 'The frame is outside this sequence.',
+  'Obserwacja nie należy do bieżącego wyniku.':
+    'The observation is outside the current set of results.',
+  'Wyszukiwanie już trwa.': 'A search is already running.',
+  'Wyszukiwanie niedostępne.': 'The search is unavailable.',
+  'Sekwencja niedostępna.': 'The sequence is unavailable.',
+  'Wewnętrzny błąd serwera.': 'Internal server error.',
+  'Błąd żądania.': 'Request failed.',
+  'Nie znaleziono obiektu w katalogu CDS. Poproś o inną nazwę lub współrzędne RA/Dec.':
+    'No object matched in the CDS catalog. Try another name or enter RA and Dec.',
+  'Wynik niedostępny.': 'The result is unavailable.',
+  'Ten detektor nie ma co najmniej dwóch różnych czasów obserwacji.':
+    'This detector needs observations from at least two different times.',
+  'Wybrano już inne wyszukiwanie.': 'A different search has already been selected.',
+  'Wybierz co najmniej 2 różnych obserwacji z bieżącego wyszukiwania.':
+    'Select at least two distinct observations from the current search.',
+  'Wybrane klatki nie tworzą porównywalnej sekwencji z różnych dat.':
+    'Select comparable frames from different dates.',
+  'Porównanie wymaga klatek jednego pasma.': 'To compare frames, select a single band.',
+  'Porównanie wymaga przynajmniej dwóch klatek.': 'Select at least two frames to compare.',
+  'Zaznaczenie zmieniło się podczas działania agenta.':
+    'The selection changed while the copilot was working.',
+  'Rozmowa niedostępna.': 'The conversation is unavailable.',
+  'Uzupełnij OPENAI_API_KEY i OPENAI_MODEL w konfiguracji backendu.':
+    'Set OPENAI_API_KEY and OPENAI_MODEL on the server.',
+  'Poczekaj na zakończenie bieżącego polecenia lub je zatrzymaj.':
+    'Wait for the current request to finish or stop it.',
+  'Operacja zakończona.': 'Operation complete.',
+  'Rozmowa osiągnęła limit kontekstu. Rozpocznij nową sesję.':
+    'The conversation reached its context limit. Start a new session.',
+  'Zatrzymano polecenie. Zatwierdzone wcześniej zmiany pozostają w kokpicie.':
+    'Request stopped. Confirmed changes are still visible in the workspace.',
+  'Przekroczono czas odpowiedzi agenta. Spróbuj krótszego polecenia.':
+    'The copilot timed out. Try a shorter request.',
+  'Agent nie zakończył polecenia. Sprawdź konfigurację modelu, klucz i dostępność API.':
+    'The copilot could not complete the request. Check the model configuration, API key, and service availability.',
+  'IRSA nie zwróciło pliku FITS.': 'IRSA did not return a FITS file.',
+  'Nie udało się pobrać lub zapisać FITS.': 'Could not download or save the FITS file.',
+  'Nie udało się pobrać wycinka IRSA (HTTP {0}).': 'Could not download the IRSA cutout (HTTP {0}).',
+  'Worker obrazów nie zwrócił prawidłowego wyniku. Uruchom uv sync w workers/imaging.':
+    'The imaging worker returned an invalid result. Run uv sync in workers/imaging.',
+  'Nie udało się wykonać analizy FITS.': 'FITS analysis failed.',
+  'Nie udało się utworzyć MP4. Sprawdź instalację workera.':
+    'Could not create the MP4. Check the imaging worker installation.',
+  'Nieprawidłowy adres produktu archiwum IRSA.': 'Invalid IRSA archive product URL.',
+  'Archiwum zwróciło pustą odpowiedź.': 'The archive returned an empty response.',
+  'Odpowiedź archiwum przekroczyła limit rozmiaru. Zmniejsz pole.':
+    'The archive response exceeded the size limit. Reduce the field of view.',
+  'Archiwum odrzuciło zapytanie.': 'The archive rejected the query.',
+  'Produkt pochodzi z innego wydania niż wybrane wyszukiwanie.':
+    'The product comes from a different release than the one selected for the search.',
+  'Nieprawidłowy czas lub detektor w metadanych IRSA.':
+    'Invalid time or detector in the IRSA metadata.',
+  'Dokładna zgodność długości fali i maski zostaną sprawdzone podczas przygotowania.':
+    'Wavelength compatibility and masks will be checked during preparation.',
+  'Nie udało się pobrać obserwacji z IRSA. Spróbuj ponownie.':
+    'Could not load observations from IRSA. Try again.',
+  'Zgodność detektora nie gwarantuje zgodności długości fali. Weryfikacja nastąpi na podstawie FITS.':
+    'Wavelength compatibility will be verified from the FITS files.',
+  'Zadanie niedostępne.': 'The job is unavailable.',
+  'Wybierz co najmniej 2 obserwacje jednego detektora z bieżącego wyszukiwania.':
+    'Select at least two observations from the same detector in the current search.',
+  'Każde pasmo wymaga co najmniej 2 obserwacji z różnych czasów.':
+    'Each band needs at least two observations from different times.',
+  'Jedna sekwencja jest już przygotowywana.': 'A sequence is already being prepared.',
+  'Wyszukiwanie lub ustawienia zmieniły się.': 'The search or settings have changed.',
+  '{0}: brak dwóch różnych czasów obserwacji.':
+    '{0}: observations from at least two different times are required.',
+  'Wybierz inne obserwacje.': 'Select different observations.',
+  'Nie udało się przygotować obrazów. Sprawdź dostępność workera i spróbuj ponownie.':
+    'Could not prepare the images. Check that the imaging worker is available and try again.',
+  'Gotowa sekwencja niedostępna.': 'The prepared sequence is unavailable.',
+  'Obserwacja nie należy do tej sekwencji.': 'The observation is outside this sequence.',
+  'Brak źródłowego FITS w cache.': 'The source FITS is missing from the cache.',
+  'Gotowa sekwencja jest niedostępna.': 'The requested sequence is unavailable.',
+  'Brak klatek RGB dla wybranych pasm i okresu. Zwiększ okres lub zmień przypisanie kolorów.':
+    'No RGB frames match the selected bands and time window. Widen the time window or change the color assignments.',
+  'Przygotuj obrazy ponownie, aby regulować ekspozycję bez utraty szczegółów.':
+    'Prepare the images again to adjust exposure while preserving detail.',
+  'Klatka niedostępna.': 'The frame is unavailable.',
+  'Przygotuj sekwencję ponownie, aby przełączać maskę jakości.':
+    'Prepare the sequence again to toggle the quality mask.',
+  'Nieprawidłowe elementy orbity SPHEREx.': 'Invalid SPHEREx orbital elements.',
+  'Nieprawidłowa epoka TLE.': 'Invalid TLE epoch.',
+  'Brak aktualnych elementów orbity. Dostępny jest schemat poglądowy.':
+    'Current orbital elements are unavailable. A schematic view is available.',
+  'Nieprawidłowy katalog wydań SPHEREx. Sprawdź plik konfiguracji.':
+    'Invalid SPHEREx release catalog. Check the configuration file.',
+  'To wydanie danych nie jest aktywne. Odśwież listę wydań.':
+    'This data release is inactive. Refresh the list of releases.',
+  'Katalog CDS jest chwilowo niedostępny. Spróbuj ponownie.':
+    'The CDS catalog is temporarily unavailable. Try again.',
+  'Sesja wygasła.': 'The session has expired.',
+  'Nowsza zmiana ustawień została już zapisana.': 'A newer settings change has already been saved.',
+  'Data początkowa musi poprzedzać końcową.': 'The start date must precede the end date.',
+  'Ustawienia zmieniły się. Pobierz aktualny stan.':
+    'The settings have changed. Load the latest state.',
   'Trwa wczytywanie klatek…': 'Loading frames\u2026',
   'Odtwarzanie wymaga co najmniej 2 klatek.': 'Playback requires at least 2 frames.',
   'Do {0}': 'To {0}',

@@ -9,7 +9,7 @@ export function ChatMessage({ message }: { message: Message }) {
       className={`chat-message chat-message-${message.role}`}
       aria-label={message.role === 'user' ? t('Twoja wiadomość') : t('Wiadomość copilota')}
     >
-      <div className="message-author">{message.role === 'user' ? 'TY' : '✧ COPILOT'}</div>
+      <div className="message-author">{message.role === 'user' ? t('TY') : '✧ COPILOT'}</div>
       <div className="message-content">
         <Markdown
           remarkPlugins={[remarkGfm]}
